@@ -10,8 +10,9 @@ import MobileBottomNav from '@/components/layout/mobile-bottom-nav';
 import ChatPage from '@/components/pages/chat-page';
 import AdvertisePage from '@/components/pages/advertise-page';
 import TokenPage from '@/components/pages/token-page';
+import NotificationsPage from '@/components/pages/notifications-page';
 
-type Page = 'markets' | 'chat' | 'advertise' | 'token';
+type Page = 'markets' | 'chat' | 'advertise' | 'token' | 'notifications';
 
 const INITIAL_STRIPS = [
   {
@@ -40,9 +41,21 @@ function Terminal() {
   const [page, setPage] = useState<Page>('markets');
   const [selectedToken, setSelectedToken] = useState('PEPEFUN');
   const [isMounted, setIsMounted] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(3);
   const isMobile = useMobile();
 
   useEffect(() => { setIsMounted(true); }, []);
+
+  // Simulate new notification arriving every ~12s to keep in sync with notifications page
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (page !== 'notifications') {
+        setUnreadCount(c => c + 1);
+      }
+    }, 12000);
+    return () => clearInterval(id);
+  }, [page]);
+
   if (!isMounted) return null;
 
   const handleSelectToken = (name: string) => {
@@ -51,21 +64,24 @@ function Terminal() {
   };
 
   const handleSidebarClick = (label: string) => {
-    if (label === 'Chat Agent') setPage('chat');
-    if (label === 'Advertise')  setPage('advertise');
-    if (label === 'Markets')    setPage('markets');
+    if (label === 'Chat Agent')     setPage('chat');
+    if (label === 'Advertise')      setPage('advertise');
+    if (label === 'Markets')        setPage('markets');
+    if (label === 'Notifications')  { setPage('notifications'); setUnreadCount(0); }
+  };
+
+  const handleBellClick = () => {
+    setPage('notifications');
+    setUnreadCount(0);
   };
 
   const renderPage = () => {
     switch (page) {
-      case 'token':
-        return <TokenPage token={selectedToken} onBack={() => setPage('markets')} />;
-      case 'chat':
-        return <ChatPage />;
-      case 'advertise':
-        return <AdvertisePage />;
-      default:
-        return <MainContent onSelectToken={handleSelectToken} />;
+      case 'token':         return <TokenPage token={selectedToken} onBack={() => setPage('markets')} />;
+      case 'chat':          return <ChatPage />;
+      case 'advertise':     return <AdvertisePage />;
+      case 'notifications': return <NotificationsPage />;
+      default:              return <MainContent onSelectToken={handleSelectToken} />;
     }
   };
 
@@ -75,11 +91,15 @@ function Terminal() {
 
       <div className="flex flex-1 overflow-hidden">
         <div className="hidden md:flex">
-          <Sidebar onMenuClick={handleSidebarClick} />
+          <Sidebar onMenuClick={handleSidebarClick} unreadCount={unreadCount} />
         </div>
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          <TopBar />
+          <TopBar
+            onBellClick={handleBellClick}
+            onSelectToken={handleSelectToken}
+            unreadCount={unreadCount}
+          />
 
           <div className="flex-1 overflow-hidden p-0.5 pb-20 md:pb-0.5">
             {renderPage()}
@@ -88,7 +108,7 @@ function Terminal() {
       </div>
 
       <MobileBottomNav
-        activeTab={page === 'token' ? 'markets' : page}
+        activeTab={page === 'token' || page === 'notifications' ? 'markets' : page}
         onTabChange={(tab) => {
           if (tab === 'markets' || tab === 'chat' || tab === 'advertise') setPage(tab as Page);
         }}

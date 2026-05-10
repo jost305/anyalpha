@@ -1,32 +1,30 @@
 import { BarChart3, Trophy, Bell, Wallet, Settings, MessageSquare, Megaphone } from 'lucide-react';
 
 const menuItems = [
-  { icon: BarChart3, label: 'Markets', section: 'MAIN' },
-  { icon: Trophy, label: 'Leaderboard', section: 'MAIN' },
-  { icon: MessageSquare, label: 'Chat Agent', section: 'MAIN' },
-  { icon: Bell, label: 'Alerts', section: 'MAIN' },
-  { icon: Wallet, label: 'Portfolio', section: 'MAIN' },
-  { icon: Settings, label: 'Profile', section: 'MAIN' },
-  { icon: Megaphone, label: 'Advertise', section: 'MAIN' },
+  { icon: BarChart3,     label: 'Markets',       section: 'MAIN' },
+  { icon: Trophy,        label: 'Leaderboard',   section: 'MAIN' },
+  { icon: MessageSquare, label: 'Chat Agent',     section: 'MAIN' },
+  { icon: Bell,          label: 'Notifications',  section: 'MAIN' },
+  { icon: Wallet,        label: 'Portfolio',      section: 'MAIN' },
+  { icon: Settings,      label: 'Profile',        section: 'MAIN' },
+  { icon: Megaphone,     label: 'Advertise',      section: 'MAIN' },
 ];
 
 const trendingTopics = [
-  { icon: '🤖', label: 'AI Agents', count: '2.4K' },
-  { icon: '🎨', label: 'Memecoins', count: '1.9K' },
+  { icon: '🤖', label: 'AI Agents',      count: '2.4K' },
+  { icon: '🎨', label: 'Memecoins',      count: '1.9K' },
   { icon: '📊', label: 'Base Ecosystem', count: '1.6K' },
-  { icon: '◎', label: 'Solana', count: '1.2K' },
-  { icon: '🔥', label: 'RWA', count: '945' },
+  { icon: '◎',  label: 'Solana',         count: '1.2K' },
+  { icon: '🔥', label: 'RWA',            count: '945'  },
 ];
 
 interface SidebarProps {
   onMenuClick?: (label: string) => void;
+  unreadCount?: number;
 }
 
-export default function Sidebar({ onMenuClick }: SidebarProps) {
+export default function Sidebar({ onMenuClick, unreadCount = 0 }: SidebarProps) {
   const handleMenuClick = (label: string) => {
-    if (label === 'Chat Agent') {
-      onMenuClick?.('chat');
-    }
     onMenuClick?.(label);
   };
 
@@ -50,7 +48,12 @@ export default function Sidebar({ onMenuClick }: SidebarProps) {
               className="w-full text-left text-sm py-1.5 px-3 hover:bg-sidebar-accent hover:text-accent-foreground transition flex items-center gap-2 text-sidebar-foreground"
             >
               <item.icon size={16} />
-              <span>{item.label}</span>
+              <span className="flex-1">{item.label}</span>
+              {item.label === 'Notifications' && unreadCount > 0 && (
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-destructive text-white animate-pulse min-w-[18px] text-center">
+                  {unreadCount}
+                </span>
+              )}
             </button>
           ))}
         </div>
