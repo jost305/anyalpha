@@ -115,6 +115,37 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+@keyframes flash-up {
+  0%   { background-color: transparent; }
+  15%  { background-color: oklch(0.5 0.3 142 / 0.28); }
+  100% { background-color: transparent; }
+}
+
+@keyframes flash-down {
+  0%   { background-color: transparent; }
+  15%  { background-color: oklch(0.5 0.28 25 / 0.28); }
+  100% { background-color: transparent; }
+}
+
+@keyframes flash-up-text {
+  0%   { color: inherit; }
+  15%  { color: oklch(0.65 0.3 142); }
+  85%  { color: oklch(0.65 0.3 142); }
+  100% { color: inherit; }
+}
+
+@keyframes flash-down-text {
+  0%   { color: inherit; }
+  15%  { color: oklch(0.6 0.28 25); }
+  85%  { color: oklch(0.6 0.28 25); }
+  100% { color: inherit; }
+}
+
+.flash-up   { animation: flash-up   700ms ease-out forwards; }
+.flash-down { animation: flash-down 700ms ease-out forwards; }
+.flash-up-text   { animation: flash-up-text   700ms ease-out forwards; }
+.flash-down-text { animation: flash-down-text 700ms ease-out forwards; }
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
