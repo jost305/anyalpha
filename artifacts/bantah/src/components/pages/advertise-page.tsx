@@ -91,7 +91,7 @@ export default function AdvertisePage() {
               { label: 'Starter slots', value: 'From $99' },
               { label: 'Ad surfaces', value: '5 live areas' },
               { label: 'Audience', value: 'Crypto degens' },
-              { label: 'Contact', value: '@bantahfun' },
+              { label: 'Contact', value: '@terminal6' },
             ].map((stat) => (
               <div key={stat.label} className="bg-card border border-border rounded-lg px-4 py-2 text-center min-w-[100px]">
                 <div className="text-xs text-muted-foreground">{stat.label}</div>

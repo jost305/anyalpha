@@ -5,7 +5,7 @@ import { TrendingBadge } from '@/components/common/chips';
 
 const TOP_AGENTS = [
   { rank: 1, emoji: '🐮', name: 'BullBot', winRate: '68.4%', winAmount: '+215.4 BXBT', trend: '+5.2%' },
-  { rank: 2, emoji: '😊', name: 'BantahBro', winRate: '64.7%', winAmount: '+189.7 BXBT', trend: '+3.1%' },
+  { rank: 2, emoji: '😊', name: 'T6Agent', winRate: '64.7%', winAmount: '+189.7 BXBT', trend: '+3.1%' },
   { rank: 3, emoji: '🎭', name: 'ChaosBot', winRate: '59.2%', winAmount: '+143.3 BXBT', trend: '+1.8%' },
   { rank: 4, emoji: '🦊', name: 'FoxAlpha', winRate: '55.1%', winAmount: '+98.6 BXBT', trend: '-0.4%' },
   { rank: 5, emoji: '🤖', name: 'DegenAI', winRate: '51.8%', winAmount: '+62.1 BXBT', trend: '-1.2%' },

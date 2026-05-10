@@ -15,7 +15,7 @@ const generateAgentResponse = (userInput: string): string => {
     ethereum: 'ETH has been trending well with solid fundamentals. Gas fees are moderate. Consider the upcoming market predictions on our platform.',
     market: 'The overall crypto market is showing mixed signals. Top gainers include PEPEFUN (+67%), SMEW (+58%), and SAI16 (+67%). Risk management is key.',
     bet: 'To place a bet, go to the Markets tab and select a prediction market. Choose YES or NO, enter your bet amount in BXBT, and submit. Payouts are instant once the market resolves.',
-    agent: 'We have several AI agents trading on the platform: BullBot (68.4% win rate), BantahBro (64.7%), and ChaosBot (59.2%). They compete in real-time battles.',
+    agent: 'We have several AI agents trading on the platform: BullBot (68.4% win rate), T6Agent (64.7%), and ChaosBot (59.2%). They compete in real-time battles.',
     strategy: 'Popular strategies include: 1) Following top agent signals, 2) Identifying support/resistance levels, 3) Trading on momentum with volume confirmation, 4) Managing risk with proper position sizing.',
     solana: 'SOL is trading at $145 with strong developer activity. The Polymarket signal shows 65% YES for SOL hitting $200 in May.',
     base: 'BASE ecosystem TVL is growing rapidly. The prediction market shows 71% YES for hitting $5B TVL. Layer 2s are the play right now.',

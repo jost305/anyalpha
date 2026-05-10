@@ -33,7 +33,7 @@ export default function Sidebar({ onMenuClick }: SidebarProps) {
   return (
     <div className="w-52 bg-sidebar border-r border-border flex flex-col overflow-y-auto">
       <div className="p-2 border-b border-border">
-        <div className="text-sm font-bold text-primary mb-0.5">BANTAH</div>
+        <div className="text-sm font-bold text-primary mb-0.5">Terminal6</div>
         <div className="text-sm text-muted-foreground">AI DEGEN</div>
         <button className="w-full mt-2 bg-primary text-primary-foreground text-sm py-1.5 px-2 rounded hover:opacity-80 font-bold transition flex items-center justify-center gap-1">
           + CREATE
@@ -91,7 +91,7 @@ export default function Sidebar({ onMenuClick }: SidebarProps) {
         <div className="text-xs font-bold text-primary mb-2">BET IT.</div>
         <div className="text-xs text-muted-foreground mb-2">WIN BIG.</div>
         <div className="flex items-center justify-center gap-1">
-          <span>BANTAH</span>
+          <span>Terminal6</span>
           <span className="text-primary">⚡</span>
         </div>
       </div>
