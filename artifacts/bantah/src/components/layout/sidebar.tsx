@@ -1,9 +1,7 @@
-import { Home, BarChart3, Zap, Trophy, Bell, Wallet, Settings, MessageSquare } from 'lucide-react';
+import { BarChart3, Trophy, Bell, Wallet, Settings, MessageSquare } from 'lucide-react';
 
 const menuItems = [
-  { icon: Home, label: 'Feed', section: 'MAIN' },
   { icon: BarChart3, label: 'Markets', section: 'MAIN' },
-  { icon: Zap, label: 'Agent Battles', section: 'MAIN' },
   { icon: Trophy, label: 'Leaderboard', section: 'MAIN' },
   { icon: MessageSquare, label: 'Chat Agent', section: 'MAIN' },
   { icon: Bell, label: 'Alerts', section: 'MAIN' },
@@ -63,9 +61,6 @@ export default function Sidebar({ onMenuClick }: SidebarProps) {
           </button>
           <button className="w-full text-left text-sm py-1 px-3 hover:bg-sidebar-accent hover:text-accent-foreground transition flex items-center gap-2 text-sidebar-foreground">
             📡 Signals
-          </button>
-          <button className="w-full text-left text-sm py-1 px-3 hover:bg-sidebar-accent hover:text-accent-foreground transition flex items-center gap-2 text-sidebar-foreground">
-            ⚔️ Battles
           </button>
         </div>
 

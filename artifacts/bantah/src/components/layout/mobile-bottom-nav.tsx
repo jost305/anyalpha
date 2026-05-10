@@ -7,8 +7,6 @@ export default function MobileBottomNav({ activeTab, onTabChange }: MobileBottom
   const tabs = [
     { id: 'markets', label: 'Markets', icon: '📊' },
     { id: 'signals', label: 'Signals', icon: '📡' },
-    { id: 'prediction', label: 'Predict', icon: '🎯' },
-    { id: 'battle', label: 'Battle', icon: '⚔️' },
     { id: 'chat', label: 'Chat', icon: '🤖' },
   ];
 
