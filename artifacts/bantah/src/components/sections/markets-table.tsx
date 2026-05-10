@@ -45,8 +45,16 @@ const BASE_MARKETS: Market[] = [
   { id: '8',  rank: 8,  emoji: '🔮', name: 'ORACLE',  pair: 'ORACLE/ETH',  chain: 'ETH',  chainColor: '#627EEA', price: 0.5028,    mcap: '$5.03M',  age: '10h', security: 75, audited: false, locked: 20, m5: 4.9,   h1: -4.0,  h6: 23.0,  h24: 10.7,   liq: '$834.1K', txn: 10169, vol: '$9M',    holders: '1,848',   netBuy: 56 },
   { id: '9',  rank: 9,  emoji: '🐉', name: 'DRGN',    pair: 'DRGN/WETH',   chain: 'ARB',  chainColor: '#12AAFF', price: 0.03824,   mcap: '$2.52B',  age: '4y',  security: 91, audited: true,  locked: 29, m5: 0.3,   h1: 1.6,   h6: 1.4,   h24: 9.0,    liq: '$16.8M',  txn: 780,   vol: '$4.5M',  holders: '384,903', netBuy: 62 },
   { id: '10', rank: 10, emoji: '🎯', name: 'BANTAH',  pair: 'BANTAH/SOL',  chain: 'SOL',  chainColor: '#9945FF', price: 0.001337,  mcap: '$8.9M',   age: '5d',  security: 79, audited: true,  locked: 55, m5: 1.4,   h1: 6.2,   h6: 18.4,  h24: 47.2,   liq: '$512K',   txn: 4821,  vol: '$2.1M',  holders: '9,234',   netBuy: 74 },
-  { id: '11', rank: 11, emoji: '⚽', name: 'BALL',    pair: 'BALL/SOL',    chain: 'SOL',  chainColor: '#9945FF', price: 0.000421,  mcap: '$420K',   age: '1d',  security: 61, audited: false, locked: 0,  m5: 8.2,   h1: 22.1,  h6: 67.4,  h24: 491.0,  liq: '$89K',    txn: 12400, vol: '$341K',  holders: '503',      netBuy: 88 },
-  { id: '12', rank: 12, emoji: '🏦', name: 'DEFAI',   pair: 'DEFAI/BASE',  chain: 'BASE', chainColor: '#0052FF', price: 0.00782,   mcap: '$7.1M',   age: '14d', security: 77, audited: true,  locked: 42, m5: -1.1,  h1: -0.8,  h6: 3.3,   h24: 12.1,   liq: '$298K',   txn: 6712,  vol: '$1.4M',  holders: '4,511',   netBuy: 53 },
+  { id: '11', rank: 11, emoji: '⚽', name: 'BALL',    pair: 'BALL/SOL',    chain: 'SOL',     chainColor: '#9945FF', price: 0.000421,  mcap: '$420K',   age: '1d',  security: 61, audited: false, locked: 0,  m5: 8.2,   h1: 22.1,  h6: 67.4,  h24: 491.0,  liq: '$89K',    txn: 12400, vol: '$341K',  holders: '503',      netBuy: 88 },
+  { id: '12', rank: 12, emoji: '🏦', name: 'DEFAI',   pair: 'DEFAI/BASE',  chain: 'BASE',    chainColor: '#0052FF', price: 0.00782,   mcap: '$7.1M',   age: '14d', security: 77, audited: true,  locked: 42, m5: -1.1,  h1: -0.8,  h6: 3.3,   h24: 12.1,   liq: '$298K',   txn: 6712,  vol: '$1.4M',  holders: '4,511',   netBuy: 53 },
+  { id: '13', rank: 13, emoji: '🟣', name: 'NADS',    pair: 'NADS/MON',    chain: 'MONAD',   chainColor: '#836EF9', price: 0.00421,   mcap: '$2.1M',   age: '2d',  security: 74, audited: true,  locked: 31, m5: 3.2,   h1: 11.4,  h6: 28.1,  h24: 82.4,   liq: '$142K',   txn: 8241,  vol: '$892K',  holders: '1,842',   netBuy: 77 },
+  { id: '14', rank: 14, emoji: '🔶', name: 'GIGA',    pair: 'GIGA/MON',    chain: 'MONAD',   chainColor: '#836EF9', price: 0.001882,  mcap: '$941K',   age: '18h', security: 68, audited: false, locked: 0,  m5: 6.8,   h1: 19.2,  h6: 44.1,  h24: 141.2,  liq: '$88K',    txn: 14821, vol: '$514K',  holders: '821',      netBuy: 82 },
+  { id: '15', rank: 15, emoji: '🌀', name: 'MEGAB',   pair: 'MEGAB/ETH',   chain: 'MEGAETH', chainColor: '#FF4F00', price: 0.00312,   mcap: '$1.56M',  age: '5d',  security: 71, audited: true,  locked: 18, m5: -2.1,  h1: 5.4,   h6: 12.8,  h24: 33.7,   liq: '$112K',   txn: 5421,  vol: '$423K',  holders: '2,104',   netBuy: 61 },
+  { id: '16', rank: 16, emoji: '📜', name: 'RUNE',    pair: 'RUNE/ETH',    chain: 'SCROLL',  chainColor: '#EBC28E', price: 0.00891,   mcap: '$4.46M',  age: '21d', security: 80, audited: true,  locked: 55, m5: 0.4,   h1: -1.2,  h6: 7.1,   h24: 18.9,   liq: '$224K',   txn: 3812,  vol: '$781K',  holders: '3,241',   netBuy: 58 },
+  { id: '17', rank: 17, emoji: '💎', name: 'DOGS',    pair: 'DOGS/TON',    chain: 'TON',     chainColor: '#0098EA', price: 0.000082,  mcap: '$8.2M',   age: '3mo', security: 78, audited: true,  locked: 40, m5: 1.1,   h1: 3.8,   h6: 9.2,   h24: 24.1,   liq: '$521K',   txn: 22841, vol: '$2.4M',  holders: '84,521',  netBuy: 64 },
+  { id: '18', rank: 18, emoji: '🐈', name: 'PURR',    pair: 'PURR/HYPE',   chain: 'HYPE',    chainColor: '#3CFFBE', price: 0.02841,   mcap: '$14.2M',  age: '8d',  security: 82, audited: true,  locked: 25, m5: -0.8,  h1: 2.1,   h6: 14.2,  h24: 41.8,   liq: '$682K',   txn: 9124,  vol: '$1.8M',  holders: '12,841',  netBuy: 68 },
+  { id: '19', rank: 19, emoji: '🐕', name: 'BABYDOGE', pair: 'BABYDOGE/BNB', chain: 'BSC',   chainColor: '#F3BA2F', price: 0.0000000024, mcap: '$42.1M', age: '4y', security: 72, audited: true, locked: 60, m5: 0.2,   h1: -2.4,  h6: 5.8,   h24: 11.4,   liq: '$2.1M',   txn: 41820, vol: '$5.2M',  holders: '842,100', netBuy: 55 },
+  { id: '20', rank: 20, emoji: '🦁', name: 'SAFU',    pair: 'SAFU/BNB',    chain: 'BSC',     chainColor: '#F3BA2F', price: 0.000182,  mcap: '$1.82M',  age: '11d', security: 65, audited: false, locked: 8,  m5: 4.1,   h1: 9.8,   h6: 21.4,  h24: 58.2,   liq: '$184K',   txn: 18421, vol: '$1.1M',  holders: '5,821',   netBuy: 72 },
 ];
 
 function fmtPrice(p: number) {
@@ -95,7 +103,22 @@ function NetBar({ netBuy }: { netBuy: number }) {
 
 type SortKey = 'trending' | 'new' | 'gainers' | 'volume';
 type StateMode = 'loaded' | 'loading' | 'error';
-const CHAIN_FILTERS = ['All Chains', 'SOL', 'ETH', 'BASE', 'ARB'];
+
+const CHAIN_CONFIG = [
+  { key: 'All Chains', label: 'All Chains', logo: '',                                                                                                          color: '#6b7280' },
+  { key: 'SOL',        label: 'SOL',        logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png',              color: '#9945FF' },
+  { key: 'ETH',        label: 'ETH',        logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png',            color: '#627EEA' },
+  { key: 'BASE',       label: 'BASE',       logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/base/info/logo.png',               color: '#0052FF' },
+  { key: 'ARB',        label: 'ARB',        logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/arbitrum/info/logo.png',            color: '#12AAFF' },
+  { key: 'MONAD',      label: 'Monad',      logo: 'https://github.com/monad-xyz.png?size=28',                                                                  color: '#836EF9' },
+  { key: 'MEGAETH',    label: 'megaETH',    logo: 'https://github.com/megaeth-labs.png?size=28',                                                               color: '#FF4F00' },
+  { key: 'SCROLL',     label: 'Scroll',     logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/scroll/info/logo.png',              color: '#EBC28E' },
+  { key: 'TON',        label: 'TON',        logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ton/info/logo.png',                 color: '#0098EA' },
+  { key: 'HYPE',       label: 'Hyperliquid',logo: 'https://github.com/hyperliquid-dex.png?size=28',                                                            color: '#3CFFBE' },
+  { key: 'BSC',        label: 'BSC',        logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/smartchain/info/logo.png',          color: '#F3BA2F' },
+];
+const CHAIN_MAP = Object.fromEntries(CHAIN_CONFIG.map(c => [c.key, c]));
+
 const SORT_OPTIONS: { key: SortKey; label: string; icon: string }[] = [
   { key: 'trending', label: 'Trending', icon: '🔥' },
   { key: 'new',      label: 'New',      icon: '✨' },
@@ -212,7 +235,8 @@ export default function MarketsTable({ onSelectToken }: { onSelectToken: (token:
       <div className="flex flex-col h-full overflow-hidden">
         {/* Toolbar */}
         <div className="shrink-0 border-b border-border bg-background">
-          <div className="flex items-center gap-1.5 px-2 py-1.5 flex-wrap">
+          {/* Row 1: Sort + Search */}
+          <div className="flex items-center gap-1.5 px-2 py-1.5">
             {SORT_OPTIONS.map((s) => (
               <button
                 key={s.key}
@@ -226,20 +250,6 @@ export default function MarketsTable({ onSelectToken }: { onSelectToken: (token:
                 {s.icon} {s.label}
               </button>
             ))}
-            <div className="h-4 w-px bg-border mx-0.5" />
-            {CHAIN_FILTERS.map((c) => (
-              <button
-                key={c}
-                onClick={() => setChain(c)}
-                className={`px-2 py-1 rounded text-xs border transition ${
-                  chain === c
-                    ? 'bg-accent/10 border-accent text-accent'
-                    : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/30'
-                }`}
-              >
-                {c}
-              </button>
-            ))}
             <div className="ml-auto flex items-center gap-1.5">
               <input
                 type="text"
@@ -251,6 +261,27 @@ export default function MarketsTable({ onSelectToken }: { onSelectToken: (token:
               <button className="p-1 border border-border rounded hover:bg-muted text-muted-foreground hover:text-foreground transition"><Filter size={13} /></button>
               <button onClick={() => setStateMode('loading')} className="p-1 border border-border rounded hover:bg-muted text-muted-foreground hover:text-foreground transition"><RefreshCw size={13} /></button>
             </div>
+          </div>
+          {/* Row 2: Chain filters with logos — horizontally scrollable */}
+          <div className="flex items-center gap-1 px-2 pb-1.5 overflow-x-auto">
+            {CHAIN_CONFIG.map((c) => (
+              <button
+                key={c.key}
+                onClick={() => setChain(c.key)}
+                className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs border transition shrink-0 whitespace-nowrap ${
+                  chain === c.key
+                    ? 'border-accent text-accent bg-accent/10'
+                    : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/30'
+                }`}
+              >
+                {c.logo ? (
+                  <img src={c.logo} alt={c.label} className="w-3.5 h-3.5 rounded-full object-cover" />
+                ) : (
+                  <span className="w-3.5 h-3.5 rounded-full bg-muted-foreground/30 inline-block" />
+                )}
+                {c.label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -300,12 +331,20 @@ export default function MarketsTable({ onSelectToken }: { onSelectToken: (token:
                           </button>
                           <div className="relative shrink-0">
                             <span className="text-xl leading-none">{m.emoji}</span>
-                            <span
-                              className="absolute -bottom-0.5 -right-1 text-[8px] font-bold px-0.5 rounded leading-tight"
-                              style={{ backgroundColor: m.chainColor, color: '#fff' }}
-                            >
-                              {m.chain}
-                            </span>
+                            {CHAIN_MAP[m.chain]?.logo ? (
+                              <img
+                                src={CHAIN_MAP[m.chain].logo}
+                                alt={m.chain}
+                                className="absolute -bottom-0.5 -right-1 w-3.5 h-3.5 rounded-full ring-1 ring-background object-cover"
+                              />
+                            ) : (
+                              <span
+                                className="absolute -bottom-0.5 -right-1 text-[8px] font-bold px-0.5 rounded leading-tight"
+                                style={{ backgroundColor: m.chainColor, color: '#fff' }}
+                              >
+                                {m.chain}
+                              </span>
+                            )}
                           </div>
                           <div>
                             <div className="font-bold text-foreground leading-tight">{m.pair}</div>
