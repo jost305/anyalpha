@@ -8,6 +8,7 @@ import TopBar from '@/components/layout/topbar';
 import MainContent from '@/components/layout/main-content';
 import MobileBottomNav from '@/components/layout/mobile-bottom-nav';
 import ChatPage from '@/components/pages/chat-page';
+import AdvertisePage from '@/components/pages/advertise-page';
 
 const INITIAL_STRIPS = [
   {
@@ -43,6 +44,8 @@ function Terminal() {
 
   const handleSidebarClick = (label: string) => {
     if (label === 'chat') setMobileTab('chat');
+    if (label === 'Advertise') setMobileTab('advertise');
+    if (label === 'Markets') setMobileTab('markets');
   };
 
   return (
@@ -58,7 +61,9 @@ function Terminal() {
           <TopBar />
 
           <div className="flex-1 overflow-hidden p-0.5 pb-20 md:pb-0.5">
-            {isMobile && mobileTab === 'chat' ? (
+            {mobileTab === 'advertise' ? (
+              <AdvertisePage />
+            ) : isMobile && mobileTab === 'chat' ? (
               <ChatPage />
             ) : (
               <MainContent selectedToken={selectedToken} setSelectedToken={setSelectedToken} />

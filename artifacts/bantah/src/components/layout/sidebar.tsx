@@ -1,4 +1,4 @@
-import { BarChart3, Trophy, Bell, Wallet, Settings, MessageSquare } from 'lucide-react';
+import { BarChart3, Trophy, Bell, Wallet, Settings, MessageSquare, Megaphone } from 'lucide-react';
 
 const menuItems = [
   { icon: BarChart3, label: 'Markets', section: 'MAIN' },
@@ -7,6 +7,7 @@ const menuItems = [
   { icon: Bell, label: 'Alerts', section: 'MAIN' },
   { icon: Wallet, label: 'Portfolio', section: 'MAIN' },
   { icon: Settings, label: 'Profile', section: 'MAIN' },
+  { icon: Megaphone, label: 'Advertise', section: 'MAIN' },
 ];
 
 const trendingTopics = [
