@@ -11,8 +11,10 @@ import ChatPage from '@/components/pages/chat-page';
 import AdvertisePage from '@/components/pages/advertise-page';
 import TokenPage from '@/components/pages/token-page';
 import NotificationsPage from '@/components/pages/notifications-page';
+import LeaderboardPage from '@/components/pages/leaderboard-page';
+import ProfilePage from '@/components/pages/profile-page';
 
-type Page = 'markets' | 'chat' | 'advertise' | 'token' | 'notifications';
+type Page = 'markets' | 'chat' | 'advertise' | 'token' | 'notifications' | 'leaderboard' | 'profile';
 
 const INITIAL_STRIPS = [
   {
@@ -68,6 +70,8 @@ function Terminal() {
     if (label === 'Advertise')      setPage('advertise');
     if (label === 'Markets')        setPage('markets');
     if (label === 'Notifications')  { setPage('notifications'); setUnreadCount(0); }
+    if (label === 'Leaderboard')    setPage('leaderboard');
+    if (label === 'Profile')        setPage('profile');
   };
 
   const handleBellClick = () => {
@@ -81,6 +85,8 @@ function Terminal() {
       case 'chat':          return <ChatPage />;
       case 'advertise':     return <AdvertisePage />;
       case 'notifications': return <NotificationsPage />;
+      case 'leaderboard':   return <LeaderboardPage />;
+      case 'profile':       return <ProfilePage />;
       default:              return <MainContent onSelectToken={handleSelectToken} />;
     }
   };
