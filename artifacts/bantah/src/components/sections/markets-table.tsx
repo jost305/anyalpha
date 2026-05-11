@@ -1,241 +1,311 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { Star, Filter, RefreshCw } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Filter, RefreshCw, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { WatchlistModal } from '@/components/modals/watchlist-modal';
 import { MarketsTableSkeleton } from '@/components/common/skeletons';
 import { EmptySearch } from '@/components/common/empty-states';
-import { LoadError } from '@/components/common/error-states';
-
-interface Market {
-  id: string;
-  rank: number;
-  emoji: string;
-  name: string;
-  pair: string;
-  chain: string;
-  chainColor: string;
-  price: number;
-  mcap: string;
-  age: string;
-  security: number;
-  audited: boolean;
-  locked: number;
-  m5: number;
-  h1: number;
-  h6: number;
-  h24: number;
-  liq: string;
-  txn: number;
-  vol: string;
-  holders: string;
-  netBuy: number;
-}
-
-type FlashDir = 'up' | 'down' | null;
-type FlashMap = Record<string, { price?: FlashDir; m5?: FlashDir; h1?: FlashDir; h6?: FlashDir; h24?: FlashDir; netBuy?: FlashDir }>;
-
-const BASE_MARKETS: Market[] = [
-  { id: '1',  rank: 1,  emoji: '🐸', name: 'PEPEFUN', pair: 'PEPE/SOL',    chain: 'SOL',  chainColor: '#9945FF', price: 0.00001248, mcap: '$12.4M',  age: '3d',  security: 82, audited: true,  locked: 92, m5: 2.1,   h1: -4.3,  h6: 8.7,   h24: -14.5, liq: '$375K',   txn: 1552,  vol: '$986K',  holders: '2,841',   netBuy: 68 },
-  { id: '2',  rank: 2,  emoji: '🤖', name: 'AIGEN',   pair: 'AIGEN/ETH',   chain: 'ETH',  chainColor: '#627EEA', price: 0.005183,  mcap: '$5.21M',  age: '1y',  security: 66, audited: false, locked: 16, m5: -0.5,  h1: 0.2,   h6: 7.7,   h24: -14.5, liq: '$375K',   txn: 1552,  vol: '$986K',  holders: '112',      netBuy: 45 },
-  { id: '3',  rank: 3,  emoji: '⚡', name: 'BOLTAI',  pair: 'BOLTAI/SOL',  chain: 'SOL',  chainColor: '#9945FF', price: 0.005288,  mcap: '$532K',   age: '17h', security: 76, audited: true,  locked: 0,  m5: 0.7,   h1: -13.0, h6: 8.1,   h24: 1333.5, liq: '$73.5K', txn: 83263, vol: '$8.7M',  holders: '3,286',   netBuy: 71 },
-  { id: '4',  rank: 4,  emoji: '🎭', name: 'CHAOS',   pair: 'CHAOS/WETH',  chain: 'BASE', chainColor: '#0052FF', price: 0.006912,  mcap: '$691K',   age: '26d', security: 81, audited: true,  locked: 21, m5: 0.0,   h1: -9.7,  h6: 41.7,  h24: 211.0,  liq: '$303.9K', txn: 9032,  vol: '$2.2M',  holders: '1,659',   netBuy: 38 },
-  { id: '5',  rank: 5,  emoji: '🌕', name: 'LUNA2',   pair: 'LUNA2/SOL',   chain: 'SOL',  chainColor: '#9945FF', price: 0.003622,  mcap: '$3.84M',  age: '6d',  security: 85, audited: true,  locked: 11, m5: -0.3,  h1: -3.5,  h6: 15.2,  h24: -3.0,   liq: '$261.9K', txn: 24385, vol: '$3M',    holders: '18,091',  netBuy: 52 },
-  { id: '6',  rank: 6,  emoji: '💧', name: 'SWEAT',   pair: 'SWEAT/USDC',  chain: 'SOL',  chainColor: '#9945FF', price: 0.002296,  mcap: '$19.62M', age: '3y',  security: 82, audited: true,  locked: 80, m5: -4.2,  h1: 4.9,   h6: 42.5,  h24: 356.3,  liq: '$555.4K', txn: 1950,  vol: '$1.8M',  holders: '5,038',   netBuy: 61 },
-  { id: '7',  rank: 7,  emoji: '🦊', name: 'FOXAI',   pair: 'FOXAI/SOL',   chain: 'SOL',  chainColor: '#9945FF', price: 0.003451,  mcap: '$33.17M', age: '2y',  security: 88, audited: true,  locked: 30, m5: -0.5,  h1: -2.5,  h6: -2.7,  h24: 28.0,   liq: '$1.8M',   txn: 23153, vol: '$3.9M',  holders: '80,635',  netBuy: 44 },
-  { id: '8',  rank: 8,  emoji: '🔮', name: 'ORACLE',  pair: 'ORACLE/ETH',  chain: 'ETH',  chainColor: '#627EEA', price: 0.5028,    mcap: '$5.03M',  age: '10h', security: 75, audited: false, locked: 20, m5: 4.9,   h1: -4.0,  h6: 23.0,  h24: 10.7,   liq: '$834.1K', txn: 10169, vol: '$9M',    holders: '1,848',   netBuy: 56 },
-  { id: '9',  rank: 9,  emoji: '🐉', name: 'DRGN',    pair: 'DRGN/WETH',   chain: 'ARB',  chainColor: '#12AAFF', price: 0.03824,   mcap: '$2.52B',  age: '4y',  security: 91, audited: true,  locked: 29, m5: 0.3,   h1: 1.6,   h6: 1.4,   h24: 9.0,    liq: '$16.8M',  txn: 780,   vol: '$4.5M',  holders: '384,903', netBuy: 62 },
-  { id: '10', rank: 10, emoji: '🎯', name: 'BANTAH',  pair: 'BANTAH/SOL',  chain: 'SOL',  chainColor: '#9945FF', price: 0.001337,  mcap: '$8.9M',   age: '5d',  security: 79, audited: true,  locked: 55, m5: 1.4,   h1: 6.2,   h6: 18.4,  h24: 47.2,   liq: '$512K',   txn: 4821,  vol: '$2.1M',  holders: '9,234',   netBuy: 74 },
-  { id: '11', rank: 11, emoji: '⚽', name: 'BALL',    pair: 'BALL/SOL',    chain: 'SOL',     chainColor: '#9945FF', price: 0.000421,  mcap: '$420K',   age: '1d',  security: 61, audited: false, locked: 0,  m5: 8.2,   h1: 22.1,  h6: 67.4,  h24: 491.0,  liq: '$89K',    txn: 12400, vol: '$341K',  holders: '503',      netBuy: 88 },
-  { id: '12', rank: 12, emoji: '🏦', name: 'DEFAI',   pair: 'DEFAI/BASE',  chain: 'BASE',    chainColor: '#0052FF', price: 0.00782,   mcap: '$7.1M',   age: '14d', security: 77, audited: true,  locked: 42, m5: -1.1,  h1: -0.8,  h6: 3.3,   h24: 12.1,   liq: '$298K',   txn: 6712,  vol: '$1.4M',  holders: '4,511',   netBuy: 53 },
-  { id: '13', rank: 13, emoji: '🟣', name: 'NADS',    pair: 'NADS/MON',    chain: 'MONAD',   chainColor: '#836EF9', price: 0.00421,   mcap: '$2.1M',   age: '2d',  security: 74, audited: true,  locked: 31, m5: 3.2,   h1: 11.4,  h6: 28.1,  h24: 82.4,   liq: '$142K',   txn: 8241,  vol: '$892K',  holders: '1,842',   netBuy: 77 },
-  { id: '14', rank: 14, emoji: '🔶', name: 'GIGA',    pair: 'GIGA/MON',    chain: 'MONAD',   chainColor: '#836EF9', price: 0.001882,  mcap: '$941K',   age: '18h', security: 68, audited: false, locked: 0,  m5: 6.8,   h1: 19.2,  h6: 44.1,  h24: 141.2,  liq: '$88K',    txn: 14821, vol: '$514K',  holders: '821',      netBuy: 82 },
-  { id: '15', rank: 15, emoji: '🌀', name: 'MEGAB',   pair: 'MEGAB/ETH',   chain: 'MEGAETH', chainColor: '#FF4F00', price: 0.00312,   mcap: '$1.56M',  age: '5d',  security: 71, audited: true,  locked: 18, m5: -2.1,  h1: 5.4,   h6: 12.8,  h24: 33.7,   liq: '$112K',   txn: 5421,  vol: '$423K',  holders: '2,104',   netBuy: 61 },
-  { id: '16', rank: 16, emoji: '📜', name: 'RUNE',    pair: 'RUNE/ETH',    chain: 'SCROLL',  chainColor: '#EBC28E', price: 0.00891,   mcap: '$4.46M',  age: '21d', security: 80, audited: true,  locked: 55, m5: 0.4,   h1: -1.2,  h6: 7.1,   h24: 18.9,   liq: '$224K',   txn: 3812,  vol: '$781K',  holders: '3,241',   netBuy: 58 },
-  { id: '17', rank: 17, emoji: '💎', name: 'DOGS',    pair: 'DOGS/TON',    chain: 'TON',     chainColor: '#0098EA', price: 0.000082,  mcap: '$8.2M',   age: '3mo', security: 78, audited: true,  locked: 40, m5: 1.1,   h1: 3.8,   h6: 9.2,   h24: 24.1,   liq: '$521K',   txn: 22841, vol: '$2.4M',  holders: '84,521',  netBuy: 64 },
-  { id: '18', rank: 18, emoji: '🐈', name: 'PURR',    pair: 'PURR/HYPE',   chain: 'HYPE',    chainColor: '#3CFFBE', price: 0.02841,   mcap: '$14.2M',  age: '8d',  security: 82, audited: true,  locked: 25, m5: -0.8,  h1: 2.1,   h6: 14.2,  h24: 41.8,   liq: '$682K',   txn: 9124,  vol: '$1.8M',  holders: '12,841',  netBuy: 68 },
-  { id: '19', rank: 19, emoji: '🐕', name: 'BABYDOGE', pair: 'BABYDOGE/BNB', chain: 'BSC',   chainColor: '#F3BA2F', price: 0.0000000024, mcap: '$42.1M', age: '4y', security: 72, audited: true, locked: 60, m5: 0.2,   h1: -2.4,  h6: 5.8,   h24: 11.4,   liq: '$2.1M',   txn: 41820, vol: '$5.2M',  holders: '842,100', netBuy: 55 },
-  { id: '20', rank: 20, emoji: '🦁', name: 'SAFU',    pair: 'SAFU/BNB',    chain: 'BSC',     chainColor: '#F3BA2F', price: 0.000182,  mcap: '$1.82M',  age: '11d', security: 65, audited: false, locked: 8,  m5: 4.1,   h1: 9.8,   h6: 21.4,  h24: 58.2,   liq: '$184K',   txn: 18421, vol: '$1.1M',  holders: '5,821',   netBuy: 72 },
-];
-
-function fmtPrice(p: number) {
-  if (p < 0.0001) return '$' + p.toFixed(8);
-  if (p < 0.01)   return '$' + p.toFixed(6);
-  if (p < 1)      return '$' + p.toFixed(4);
-  return '$' + p.toFixed(2);
-}
-
-function fmtTxn(n: number) {
-  return n >= 1000 ? (n / 1000).toFixed(1) + 'K' : String(n);
-}
-
-function Pct({ v, flash }: { v: number; flash?: FlashDir }) {
-  const color = v > 0 ? 'text-secondary' : v < 0 ? 'text-destructive' : 'text-muted-foreground';
-  const prefix = v > 0 ? '+' : '';
-  const anim = flash === 'up' ? 'flash-up-text' : flash === 'down' ? 'flash-down-text' : '';
-  return (
-    <span key={flash} className={`${color} font-mono tabular-nums ${anim}`}>
-      {prefix}{v.toFixed(1)}%
-    </span>
-  );
-}
-
-function SecurityBar({ score, audited }: { score: number; audited: boolean }) {
-  const color = score >= 80 ? 'bg-secondary' : score >= 60 ? 'bg-yellow-400' : 'bg-destructive';
-  return (
-    <div className="flex items-center gap-1">
-      <div className="w-10 h-1.5 bg-muted rounded-full overflow-hidden">
-        <div className={`h-full rounded-full ${color}`} style={{ width: `${score}%` }} />
-      </div>
-      <span className="text-xs text-muted-foreground">{score}</span>
-      {audited && <span className="text-secondary text-xs">✓</span>}
-    </div>
-  );
-}
-
-function NetBar({ netBuy }: { netBuy: number }) {
-  return (
-    <div className="flex h-1.5 w-12 rounded-full overflow-hidden">
-      <div className="bg-secondary transition-all duration-700" style={{ width: `${netBuy}%` }} />
-      <div className="bg-destructive transition-all duration-700" style={{ width: `${100 - netBuy}%` }} />
-    </div>
-  );
-}
-
-type SortKey = 'trending' | 'new' | 'gainers' | 'volume';
-type StateMode = 'loaded' | 'loading' | 'error';
+import {
+  fetchMarkets,
+  fmtAge,
+  fmtCompact,
+  fmtPct,
+  fmtPrice,
+  marketPairLabel,
+  type MarketToken,
+  type SortKey,
+} from '@/lib/market-data';
 
 const CHAIN_CONFIG = [
-  { key: 'All Chains', label: 'All Chains', logo: '',                                                                                                          color: '#6b7280' },
-  { key: 'SOL',        label: 'SOL',        logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png',              color: '#9945FF' },
-  { key: 'ETH',        label: 'ETH',        logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png',            color: '#627EEA' },
-  { key: 'BASE',       label: 'BASE',       logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/base/info/logo.png',               color: '#0052FF' },
-  { key: 'ARB',        label: 'ARB',        logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/arbitrum/info/logo.png',            color: '#12AAFF' },
-  { key: 'MONAD',      label: 'Monad',      logo: 'https://github.com/monad-xyz.png?size=28',                                                                  color: '#836EF9' },
-  { key: 'MEGAETH',    label: 'megaETH',    logo: 'https://github.com/megaeth-labs.png?size=28',                                                               color: '#FF4F00' },
-  { key: 'SCROLL',     label: 'Scroll',     logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/scroll/info/logo.png',              color: '#EBC28E' },
-  { key: 'TON',        label: 'TON',        logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ton/info/logo.png',                 color: '#0098EA' },
-  { key: 'HYPE',       label: 'Hyperliquid',logo: 'https://github.com/hyperliquid-dex.png?size=28',                                                            color: '#3CFFBE' },
-  { key: 'BSC',        label: 'BSC',        logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/smartchain/info/logo.png',          color: '#F3BA2F' },
+  { key: 'all', label: 'All Chains', logo: '', color: '#6b7280' },
+  { key: 'solana', label: 'Solana', logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png', color: '#9945FF' },
+  { key: 'ethereum', label: 'Ethereum', logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png', color: '#627EEA' },
+  { key: 'base', label: 'Base', logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/base/info/logo.png', color: '#0052FF' },
+  { key: 'arbitrum', label: 'Arbitrum', logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/arbitrum/info/logo.png', color: '#12AAFF' },
+  { key: 'bsc', label: 'BSC', logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/smartchain/info/logo.png', color: '#F3BA2F' },
+  { key: 'polygon', label: 'Polygon', logo: 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/polygon/info/logo.png', color: '#8247E5' },
+  { key: 'optimism', label: 'Optimism', logo: '', color: '#FF0420' },
+  { key: 'avalanche', label: 'Avalanche', logo: '', color: '#E84142' },
+  { key: 'ton', label: 'TON', logo: '', color: '#0098EA' },
 ];
+
+const RETRY_DELAY_MS = 4000;
+const FLASH_DURATION_MS = 950;
+
 const CHAIN_MAP = Object.fromEntries(CHAIN_CONFIG.map(c => [c.key, c]));
 
-const SORT_OPTIONS: { key: SortKey; label: string; icon: string }[] = [
-  { key: 'trending', label: 'Trending', icon: '🔥' },
-  { key: 'new',      label: 'New',      icon: '✨' },
-  { key: 'gainers',  label: 'Top Gainers', icon: '📈' },
-  { key: 'volume',   label: 'Volume',   icon: '💹' },
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: 'trending', label: 'Trending' },
+  { key: 'new', label: 'New' },
+  { key: 'm5', label: '5m' },
+  { key: 'h1', label: '1h' },
+  { key: 'h6', label: '6h' },
+  { key: 'h24', label: '24h' },
+  { key: 'volume', label: 'Volume' },
 ];
 
-export default function MarketsTable({ onSelectToken }: { onSelectToken: (token: string) => void }) {
-  const [markets, setMarkets] = useState<Market[]>(BASE_MARKETS);
-  const [flashes, setFlashes] = useState<FlashMap>({});
-  const prevRef = useRef<Record<string, Market>>({});
+type FlashField =
+  | 'mcap'
+  | 'price'
+  | 'age'
+  | 'signal'
+  | 'm5'
+  | 'h1'
+  | 'h6'
+  | 'h24'
+  | 'liq'
+  | 'txn'
+  | 'vol';
 
-  const [sortBy, setSortBy] = useState<SortKey>('trending');
-  const [search, setSearch] = useState('');
-  const [chain, setChain] = useState('All Chains');
-  const [stateMode, setStateMode] = useState<StateMode>('loaded');
-  const [watchlistToken, setWatchlistToken] = useState<string | null>(null);
-  const [watchlisted, setWatchlisted] = useState<Set<string>>(new Set());
+type FlashDirection = 'up' | 'down' | 'pulse';
+type MarketFlashMap = Record<string, Partial<Record<FlashField, FlashDirection>>>;
 
-  // Initialise prev ref
-  useEffect(() => {
-    BASE_MARKETS.forEach((m) => { prevRef.current[m.id] = { ...m }; });
-  }, []);
+function flashClass(direction?: FlashDirection) {
+  if (direction === 'up') return 'market-update-up';
+  if (direction === 'down') return 'market-update-down';
+  if (direction === 'pulse') return 'market-update-pulse';
+  return '';
+}
 
-  // Live tick — update 3-5 random rows every 1.2s
-  useEffect(() => {
-    const tick = () => {
-      setMarkets((prev) => {
-        const next = prev.map((m) => ({ ...m }));
-        const count = 3 + Math.floor(Math.random() * 3);
-        const indices = [...Array(next.length).keys()].sort(() => Math.random() - 0.5).slice(0, count);
+function formatPairCount(value: number) {
+  return new Intl.NumberFormat('en-US').format(value);
+}
 
-        const newFlashes: FlashMap = {};
+function LiveValue({
+  children,
+  className = '',
+  direction,
+  block = false,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  direction?: FlashDirection;
+  block?: boolean;
+}) {
+  const classes = [
+    block ? 'block' : 'inline-block',
+    'rounded px-1 -mx-1 will-change-transform',
+    flashClass(direction),
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
-        indices.forEach((i) => {
-          const m = next[i];
-          const priceDelta = m.price * (Math.random() * 0.006 - 0.003);
-          const newPrice   = Math.max(m.price * 0.5, m.price + priceDelta);
-          const m5Delta    = (Math.random() - 0.48) * 0.8;
-          const h1Delta    = (Math.random() - 0.5)  * 0.3;
-          const h6Delta    = (Math.random() - 0.5)  * 0.2;
-          const h24Delta   = (Math.random() - 0.5)  * 0.15;
-          const netBuyNew  = Math.min(95, Math.max(5, m.netBuy + (Math.random() - 0.5) * 6));
-          const txnDelta   = Math.floor((Math.random() - 0.3) * 12);
+  if (block) {
+    return <div className={classes}>{children}</div>;
+  }
 
-          const prev = prevRef.current[m.id];
-          const dir  = (field: number, newVal: number): FlashDir =>
-            newVal > field ? 'up' : newVal < field ? 'down' : null;
+  return <span className={classes}>{children}</span>;
+}
 
-          newFlashes[m.id] = {
-            price:  dir(prev.price,  newPrice),
-            m5:     dir(prev.m5,     m.m5 + m5Delta),
-            netBuy: dir(prev.netBuy, netBuyNew),
-          };
+function metricSnapshot(market: MarketToken) {
+  return {
+    mcap: market.marketCap ?? market.fdv,
+    price: market.priceUsd,
+    age: market.ageMinutes,
+    signal: market.signalScore,
+    m5: market.priceChange.m5,
+    h1: market.priceChange.h1,
+    h6: market.priceChange.h6,
+    h24: market.priceChange.h24,
+    liq: market.liquidityUsd,
+    txn: market.txns.h24.buys + market.txns.h24.sells,
+    vol: market.volume.h24,
+  };
+}
 
-          m.price  = newPrice;
-          m.m5     = parseFloat((m.m5 + m5Delta).toFixed(2));
-          m.h1     = parseFloat((m.h1 + h1Delta).toFixed(2));
-          m.h6     = parseFloat((m.h6 + h6Delta).toFixed(2));
-          m.h24    = parseFloat((m.h24 + h24Delta).toFixed(2));
-          m.netBuy = Math.round(netBuyNew);
-          m.txn    = Math.max(0, m.txn + txnDelta);
+function changeDirection(
+  previous: number | undefined,
+  next: number | undefined,
+  mode: 'directional' | 'pulse' = 'directional',
+): FlashDirection | undefined {
+  if (typeof previous !== 'number' || typeof next !== 'number' || Object.is(previous, next)) {
+    return undefined;
+  }
 
-          prevRef.current[m.id] = { ...m };
-        });
+  if (mode === 'pulse') return 'pulse';
+  return next > previous ? 'up' : 'down';
+}
 
-        setFlashes((f) => ({ ...f, ...newFlashes }));
+function buildFlashMap(previousMarkets: Map<string, MarketToken>, nextMarkets: MarketToken[]): MarketFlashMap {
+  const flashes: MarketFlashMap = {};
 
-        // Clear flashes after animation completes
-        setTimeout(() => {
-          setFlashes((f) => {
-            const cleared = { ...f };
-            indices.forEach((i) => { delete cleared[next[i].id]; });
-            return cleared;
-          });
-        }, 750);
+  for (const market of nextMarkets) {
+    const previous = previousMarkets.get(market.id);
+    if (!previous) continue;
 
-        return next;
-      });
+    const prevMetrics = metricSnapshot(previous);
+    const nextMetrics = metricSnapshot(market);
+    const nextFields: Partial<Record<FlashField, FlashDirection>> = {};
+
+    const setFlash = (field: FlashField, direction?: FlashDirection) => {
+      if (direction) nextFields[field] = direction;
     };
 
-    const id = setInterval(tick, 1200);
-    return () => clearInterval(id);
+    setFlash('mcap', changeDirection(prevMetrics.mcap, nextMetrics.mcap));
+    setFlash('price', changeDirection(prevMetrics.price, nextMetrics.price));
+    setFlash('age', changeDirection(prevMetrics.age, nextMetrics.age, 'pulse'));
+    setFlash('signal', changeDirection(prevMetrics.signal, nextMetrics.signal));
+    setFlash('m5', changeDirection(prevMetrics.m5, nextMetrics.m5));
+    setFlash('h1', changeDirection(prevMetrics.h1, nextMetrics.h1));
+    setFlash('h6', changeDirection(prevMetrics.h6, nextMetrics.h6));
+    setFlash('h24', changeDirection(prevMetrics.h24, nextMetrics.h24));
+    setFlash('liq', changeDirection(prevMetrics.liq, nextMetrics.liq));
+    setFlash('txn', changeDirection(prevMetrics.txn, nextMetrics.txn));
+    setFlash('vol', changeDirection(prevMetrics.vol, nextMetrics.vol));
+
+    if (Object.keys(nextFields).length > 0) {
+      flashes[market.id] = nextFields;
+    }
+  }
+
+  return flashes;
+}
+
+function TokenAvatar({ market }: { market: MarketToken }) {
+  if (market.imageUrl) {
+    return <img src={market.imageUrl} alt={market.symbol} className="w-7 h-7 rounded-full object-cover bg-muted" />;
+  }
+
+  return (
+    <div className="w-7 h-7 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center text-[10px] font-black text-primary">
+      {market.symbol.slice(0, 2).toUpperCase()}
+    </div>
+  );
+}
+
+function Pct({ value, direction }: { value?: number; direction?: FlashDirection }) {
+  const color = typeof value !== 'number'
+    ? 'text-muted-foreground'
+    : value > 0
+      ? 'text-secondary'
+      : value < 0
+        ? 'text-destructive'
+        : 'text-muted-foreground';
+
+  return (
+    <LiveValue direction={direction} className={`${color} font-mono tabular-nums`}>
+      {fmtPct(value)}
+    </LiveValue>
+  );
+}
+
+function SignalBar({
+  score,
+  riskFlags,
+  direction,
+}: {
+  score: number;
+  riskFlags: string[];
+  direction?: FlashDirection;
+}) {
+  const color = riskFlags.length > 0 ? 'bg-yellow-400' : score >= 70 ? 'bg-secondary' : score >= 45 ? 'bg-primary' : 'bg-muted-foreground';
+
+  return (
+    <div className={`flex items-center gap-1.5 rounded px-1 -mx-1 will-change-transform ${flashClass(direction)}`}>
+      <div className="w-12 h-1.5 bg-muted rounded-full overflow-hidden">
+        <div className={`h-full rounded-full transition-[width] duration-700 ${color}`} style={{ width: `${score}%` }} />
+      </div>
+      <span className="text-xs text-muted-foreground tabular-nums">{score}</span>
+    </div>
+  );
+}
+
+interface MarketsTableProps {
+  onSelectToken: (market: MarketToken) => void;
+}
+
+export default function MarketsTable({ onSelectToken }: MarketsTableProps) {
+  const [markets, setMarkets] = useState<MarketToken[]>([]);
+  const [flashMap, setFlashMap] = useState<MarketFlashMap>({});
+  const [sortBy, setSortBy] = useState<SortKey>('trending');
+  const [search, setSearch] = useState('');
+  const [chain, setChain] = useState('all');
+  const [totalPairs, setTotalPairs] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [watchlistToken, setWatchlistToken] = useState<string | null>(null);
+  const [watchlisted, setWatchlisted] = useState<Set<string>>(new Set());
+  const [refreshTick, setRefreshTick] = useState(0);
+  const previousMarketsRef = useRef<Map<string, MarketToken>>(new Map());
+  const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+    };
   }, []);
 
-  let rows = markets.filter((m) => {
-    const matchChain  = chain === 'All Chains' || m.chain === chain;
-    const matchSearch = !search || m.name.toLowerCase().includes(search.toLowerCase()) || m.pair.toLowerCase().includes(search.toLowerCase());
-    return matchChain && matchSearch;
-  });
+  useEffect(() => {
+    const controller = new AbortController();
+    let retryTimeout: ReturnType<typeof setTimeout> | undefined;
+    const timeout = setTimeout(() => {
+      setLoading(true);
+      setError(null);
 
-  if (sortBy === 'gainers') rows = [...rows].sort((a, b) => b.h24 - a.h24);
-  if (sortBy === 'volume')  rows = [...rows].sort((a, b) => parseFloat(b.vol.replace(/[$KMB]/g, '')) - parseFloat(a.vol.replace(/[$KMB]/g, '')));
-  if (sortBy === 'new')     rows = [...rows].sort((a) => (a.age.includes('h') || a.age.includes('d') ? -1 : 1));
+      fetchMarkets({
+        chain,
+        q: search.trim() || undefined,
+        sort: sortBy,
+        limit: 100,
+        signal: controller.signal,
+      })
+        .then((response) => {
+          const nextFlashes = buildFlashMap(previousMarketsRef.current, response.data);
+          previousMarketsRef.current = new Map(response.data.map((market) => [market.id, market]));
+          setMarkets(response.data);
+          setTotalPairs(response.total);
+          setFlashMap(nextFlashes);
 
-  if (stateMode === 'loading') return <div className="relative h-full"><MarketsTableSkeleton /><button onClick={() => setStateMode('loaded')} className="absolute bottom-3 right-3 text-xs border border-border rounded px-2 py-1 text-muted-foreground hover:text-foreground">Load data</button></div>;
-  if (stateMode === 'error')   return <LoadError onRetry={() => setStateMode('loaded')} />;
+          if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+          if (Object.keys(nextFlashes).length > 0) {
+            flashTimeoutRef.current = setTimeout(() => {
+              setFlashMap({});
+            }, FLASH_DURATION_MS);
+          }
+        })
+        .catch((err) => {
+          if (controller.signal.aborted) return;
+          setError(err instanceof Error ? err.message : 'Failed to load markets.');
+          retryTimeout = setTimeout(() => {
+            setRefreshTick((tick) => tick + 1);
+          }, RETRY_DELAY_MS);
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setLoading(false);
+        });
+    }, search ? 300 : 0);
 
-  const toggleWatchlist = (e: React.MouseEvent, market: Market) => {
+    return () => {
+      clearTimeout(timeout);
+      if (retryTimeout) clearTimeout(retryTimeout);
+      controller.abort();
+    };
+  }, [chain, refreshTick, search, sortBy]);
+
+  const visibleChains = useMemo(() => {
+    const keys = new Set(markets.map((market) => market.chainId));
+    return CHAIN_CONFIG.filter((chainConfig) => chainConfig.key === 'all' || keys.has(chainConfig.key));
+  }, [markets]);
+
+  const toggleWatchlist = (e: React.MouseEvent, market: MarketToken) => {
     e.stopPropagation();
     if (watchlisted.has(market.id)) {
       setWatchlisted((s) => { const n = new Set(s); n.delete(market.id); return n; });
-      toast.info('Removed from watchlist', { description: `${market.pair} removed.` });
+      toast.info('Removed from watchlist', { description: `${marketPairLabel(market)} removed.` });
     } else {
-      setWatchlistToken(market.name);
+      setWatchlistToken(market.symbol);
       setWatchlisted((s) => new Set(s).add(market.id));
     }
   };
+
+  if (markets.length === 0 && (loading || error)) return <MarketsTableSkeleton />;
 
   return (
     <>
       <WatchlistModal open={!!watchlistToken} onOpenChange={(o) => !o && setWatchlistToken(null)} token={watchlistToken || undefined} />
 
       <div className="flex flex-col h-full overflow-hidden">
-        {/* Toolbar */}
         <div className="shrink-0 border-b border-border bg-background">
-          {/* Row 1: Sort + Search */}
           <div className="flex items-center gap-1.5 px-2 py-1.5">
             {SORT_OPTIONS.map((s) => (
               <button
@@ -247,24 +317,32 @@ export default function MarketsTable({ onSelectToken }: { onSelectToken: (token:
                     : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/30'
                 }`}
               >
-                {s.icon} {s.label}
+                {s.label}
               </button>
             ))}
             <div className="ml-auto flex items-center gap-1.5">
               <input
                 type="text"
-                placeholder="Search..."
+                placeholder="Search live pairs..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="bg-muted border border-border rounded px-2 py-1 text-xs outline-none focus:border-primary w-28 placeholder:text-muted-foreground"
+                className="bg-muted border border-border rounded px-2 py-1 text-xs outline-none focus:border-primary w-36 placeholder:text-muted-foreground"
               />
-              <button className="p-1 border border-border rounded hover:bg-muted text-muted-foreground hover:text-foreground transition"><Filter size={13} /></button>
-              <button onClick={() => setStateMode('loading')} className="p-1 border border-border rounded hover:bg-muted text-muted-foreground hover:text-foreground transition"><RefreshCw size={13} /></button>
+              <button className="p-1 border border-border rounded hover:bg-muted text-muted-foreground hover:text-foreground transition" title="Filters">
+                <Filter size={13} />
+              </button>
+              <button
+                onClick={() => setRefreshTick((tick) => tick + 1)}
+                className="p-1 border border-border rounded hover:bg-muted text-muted-foreground hover:text-foreground transition"
+                title="Refresh"
+              >
+                <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+              </button>
             </div>
           </div>
-          {/* Row 2: Chain filters with logos — horizontally scrollable */}
+
           <div className="flex items-center gap-1 px-2 pb-1.5 overflow-x-auto">
-            {CHAIN_CONFIG.map((c) => (
+            {visibleChains.map((c) => (
               <button
                 key={c.key}
                 onClick={() => setChain(c.key)}
@@ -285,19 +363,18 @@ export default function MarketsTable({ onSelectToken }: { onSelectToken: (token:
           </div>
         </div>
 
-        {/* Table */}
         <div className="flex-1 overflow-auto">
-          {rows.length === 0 ? (
-            <EmptySearch onReset={() => setSearch('')} />
+          {markets.length === 0 ? (
+            <EmptySearch onReset={() => { setSearch(''); setChain('all'); }} />
           ) : (
-            <table className="w-full text-xs border-collapse min-w-[820px]">
+            <table className="w-full text-xs border-collapse min-w-[900px]">
               <thead className="sticky top-0 bg-background border-b border-border z-10">
                 <tr className="text-muted-foreground text-left">
                   <th className="w-7 px-2 py-1.5 font-medium">#</th>
-                  <th className="px-2 py-1.5 font-medium min-w-[160px]">Pool</th>
+                  <th className="px-2 py-1.5 font-medium min-w-[190px]">Pair</th>
                   <th className="px-2 py-1.5 font-medium text-right whitespace-nowrap">MCAP / Price</th>
                   <th className="px-2 py-1.5 font-medium text-right">Age</th>
-                  <th className="px-2 py-1.5 font-medium whitespace-nowrap">Security</th>
+                  <th className="px-2 py-1.5 font-medium whitespace-nowrap">Signal</th>
                   <th className="px-2 py-1.5 font-medium text-right">5m</th>
                   <th className="px-2 py-1.5 font-medium text-right">1h</th>
                   <th className="px-2 py-1.5 font-medium text-right">6h</th>
@@ -305,81 +382,111 @@ export default function MarketsTable({ onSelectToken }: { onSelectToken: (token:
                   <th className="px-2 py-1.5 font-medium text-right">Liq</th>
                   <th className="px-2 py-1.5 font-medium text-right">TXN</th>
                   <th className="px-2 py-1.5 font-medium text-right">Vol</th>
-                  <th className="px-2 py-1.5 font-medium text-right">Holders</th>
-                  <th className="px-2 py-1.5 font-medium text-center">Net</th>
+                  <th className="px-2 py-1.5 font-medium">Tags</th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map((m) => {
-                  const f = flashes[m.id] || {};
-                  const rowFlash = f.price === 'up' ? 'flash-up' : f.price === 'down' ? 'flash-down' : '';
+                {markets.map((market, idx) => {
+                  const chainConfig = CHAIN_MAP[market.chainId];
+                  const txn24 = market.txns.h24.buys + market.txns.h24.sells;
+                  const marketFlashes = flashMap[market.id] ?? {};
+
                   return (
                     <tr
-                      key={m.id}
-                      onClick={() => onSelectToken(m.name)}
-                      className={`border-b border-border/50 hover:bg-muted/40 cursor-pointer group ${rowFlash}`}
+                      key={market.id}
+                      onClick={() => onSelectToken(market)}
+                      className="border-b border-border/50 hover:bg-muted/40 cursor-pointer group"
                     >
-                      <td className="px-2 py-1.5 text-muted-foreground font-mono tabular-nums">{m.rank}</td>
+                      <td className="px-2 py-1.5 text-muted-foreground font-mono tabular-nums">{idx + 1}</td>
 
                       <td className="px-2 py-1.5">
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={(e) => toggleWatchlist(e, m)}
-                            className={`transition shrink-0 ${watchlisted.has(m.id) ? 'text-yellow-400' : 'text-muted-foreground opacity-0 group-hover:opacity-100'}`}
+                            onClick={(e) => toggleWatchlist(e, market)}
+                            className={`transition shrink-0 ${watchlisted.has(market.id) ? 'text-yellow-400' : 'text-muted-foreground opacity-0 group-hover:opacity-100'}`}
+                            title="Watchlist"
                           >
-                            <Star size={11} fill={watchlisted.has(m.id) ? 'currentColor' : 'none'} />
+                            <Star size={11} fill={watchlisted.has(market.id) ? 'currentColor' : 'none'} />
                           </button>
                           <div className="relative shrink-0">
-                            <span className="text-xl leading-none">{m.emoji}</span>
-                            {CHAIN_MAP[m.chain]?.logo ? (
+                            <TokenAvatar market={market} />
+                            {chainConfig?.logo ? (
                               <img
-                                src={CHAIN_MAP[m.chain].logo}
-                                alt={m.chain}
+                                src={chainConfig.logo}
+                                alt={market.chainLabel}
                                 className="absolute -bottom-0.5 -right-1 w-3.5 h-3.5 rounded-full ring-1 ring-background object-cover"
                               />
                             ) : (
                               <span
                                 className="absolute -bottom-0.5 -right-1 text-[8px] font-bold px-0.5 rounded leading-tight"
-                                style={{ backgroundColor: m.chainColor, color: '#fff' }}
+                                style={{ backgroundColor: chainConfig?.color ?? '#6b7280', color: '#fff' }}
                               >
-                                {m.chain}
+                                {market.chainId.slice(0, 3).toUpperCase()}
                               </span>
                             )}
                           </div>
                           <div>
-                            <div className="font-bold text-foreground leading-tight">{m.pair}</div>
-                            <div className="text-muted-foreground leading-tight truncate max-w-[120px]">{m.name}</div>
+                            <div className="font-bold text-foreground leading-tight">{marketPairLabel(market)}</div>
+                            <div className="text-muted-foreground leading-tight truncate max-w-[150px]">
+                              {market.name} · {market.dexId}
+                            </div>
                           </div>
                         </div>
                       </td>
 
                       <td className="px-2 py-1.5 text-right">
-                        <div className={`font-bold text-foreground font-mono tabular-nums transition-colors duration-300 ${f.price === 'up' ? 'flash-up-text' : f.price === 'down' ? 'flash-down-text' : ''}`}>
-                          {m.mcap}
-                        </div>
-                        <div className={`font-mono tabular-nums text-muted-foreground transition-colors duration-300 ${f.price === 'up' ? 'flash-up-text' : f.price === 'down' ? 'flash-down-text' : ''}`}>
-                          {fmtPrice(m.price)}
-                        </div>
+                        <LiveValue
+                          block
+                          direction={marketFlashes.mcap}
+                          className="font-bold text-violet-700 dark:text-violet-300 font-mono tabular-nums"
+                        >
+                          {fmtCompact(market.marketCap ?? market.fdv, { currency: true })}
+                        </LiveValue>
+                        <LiveValue
+                          block
+                          direction={marketFlashes.price}
+                          className="font-mono tabular-nums text-muted-foreground"
+                        >
+                          {fmtPrice(market.priceUsd)}
+                        </LiveValue>
                       </td>
 
-                      <td className="px-2 py-1.5 text-right text-muted-foreground">{m.age}</td>
-                      <td className="px-2 py-1.5"><SecurityBar score={m.security} audited={m.audited} /></td>
-
-                      <td className="px-2 py-1.5 text-right"><Pct v={m.m5} flash={f.m5} /></td>
-                      <td className="px-2 py-1.5 text-right"><Pct v={m.h1} flash={f.h1} /></td>
-                      <td className="px-2 py-1.5 text-right"><Pct v={m.h6} flash={f.h6} /></td>
-                      <td className="px-2 py-1.5 text-right"><Pct v={m.h24} flash={f.h24} /></td>
-
-                      <td className="px-2 py-1.5 text-right font-mono text-muted-foreground tabular-nums">{m.liq}</td>
-                      <td className={`px-2 py-1.5 text-right font-mono tabular-nums transition-colors duration-300 ${f.price === 'up' ? 'text-secondary' : f.price === 'down' ? 'text-destructive' : 'text-muted-foreground'}`}>
-                        {fmtTxn(m.txn)}
+                      <td className="px-2 py-1.5 text-right text-muted-foreground">
+                        <LiveValue direction={marketFlashes.age} className="text-muted-foreground">
+                          {fmtAge(market.ageMinutes)}
+                        </LiveValue>
                       </td>
-                      <td className="px-2 py-1.5 text-right font-mono text-muted-foreground tabular-nums">{m.vol}</td>
-                      <td className="px-2 py-1.5 text-right font-mono text-muted-foreground tabular-nums">{m.holders}</td>
-
                       <td className="px-2 py-1.5">
-                        <div className="flex justify-center">
-                          <NetBar netBuy={m.netBuy} />
+                        <SignalBar score={market.signalScore} riskFlags={market.riskFlags} direction={marketFlashes.signal} />
+                      </td>
+
+                      <td className="px-2 py-1.5 text-right"><Pct value={market.priceChange.m5} direction={marketFlashes.m5} /></td>
+                      <td className="px-2 py-1.5 text-right"><Pct value={market.priceChange.h1} direction={marketFlashes.h1} /></td>
+                      <td className="px-2 py-1.5 text-right"><Pct value={market.priceChange.h6} direction={marketFlashes.h6} /></td>
+                      <td className="px-2 py-1.5 text-right"><Pct value={market.priceChange.h24} direction={marketFlashes.h24} /></td>
+
+                      <td className="px-2 py-1.5 text-right font-mono text-muted-foreground tabular-nums">
+                        <LiveValue direction={marketFlashes.liq} className="font-mono text-muted-foreground tabular-nums">
+                          {fmtCompact(market.liquidityUsd, { currency: true })}
+                        </LiveValue>
+                      </td>
+                      <td className="px-2 py-1.5 text-right font-mono text-muted-foreground tabular-nums">
+                        <LiveValue direction={marketFlashes.txn} className="font-mono text-muted-foreground tabular-nums">
+                          {fmtCompact(txn24, { digits: 0 })}
+                        </LiveValue>
+                      </td>
+                      <td className="px-2 py-1.5 text-right font-mono text-muted-foreground tabular-nums">
+                        <LiveValue direction={marketFlashes.vol} className="font-mono text-muted-foreground tabular-nums">
+                          {fmtCompact(market.volume.h24, { currency: true })}
+                        </LiveValue>
+                      </td>
+                      <td className="px-2 py-1.5">
+                        <div className="flex gap-1 flex-wrap max-w-[180px]">
+                          {(market.narrativeTags.length > 0 ? market.narrativeTags : [market.chainLabel]).slice(0, 3).map((tag) => (
+                            <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border/60">
+                              {tag}
+                            </span>
+                          ))}
                         </div>
                       </td>
                     </tr>
@@ -390,17 +497,11 @@ export default function MarketsTable({ onSelectToken }: { onSelectToken: (token:
           )}
         </div>
 
-        {/* Footer */}
         <div className="shrink-0 border-t border-border bg-background px-3 py-1 flex items-center justify-between text-xs text-muted-foreground">
-          <span>{rows.length} pools · live</span>
-          <div className="flex items-center gap-3">
-            <span>Showing {Math.min(rows.length, 50)} of {markets.length}</span>
-            <div className="flex items-center gap-1">
-              <button className="px-1.5 py-0.5 border border-border rounded hover:bg-muted transition">‹</button>
-              <span className="px-1.5 py-0.5 bg-primary/10 border border-primary rounded text-primary font-bold">1</span>
-              <button className="px-1.5 py-0.5 border border-border rounded hover:bg-muted transition">›</button>
-            </div>
-          </div>
+          <span>
+            Showing pairs {markets.length > 0 ? `1-${markets.length}` : '0-0'} of {formatPairCount(totalPairs)}
+          </span>
+          <span>{error ? 'Last refresh failed; showing latest loaded data' : 'Auto refreshed on filter changes'}</span>
         </div>
       </div>
     </>

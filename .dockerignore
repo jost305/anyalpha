@@ -1,0 +1,11 @@
+.git
+.railway
+.local
+.agents
+.cache
+node_modules
+.env.local
+dist
+tmp
+coverage
+zipFile.zip

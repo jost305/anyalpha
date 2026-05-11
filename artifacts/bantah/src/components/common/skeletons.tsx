@@ -110,6 +110,41 @@ export function SignalsSkeleton() {
   );
 }
 
+export function NotificationsSkeleton() {
+  return (
+    <div className="flex flex-col h-full">
+      <div className="border-b border-border px-4 py-3 flex items-center justify-between">
+        <Skeleton className="h-5 w-28" />
+        <Skeleton className="h-8 w-24 rounded" />
+      </div>
+      <div className="border-b border-border px-4 py-2 flex gap-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-8 w-16 rounded-full" />
+        ))}
+      </div>
+      <div className="flex-1 overflow-hidden px-4 py-3 space-y-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="flex items-start gap-3 border-b border-border/50 pb-3">
+            <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-3.5 w-28" />
+                <Skeleton className="h-3 w-14" />
+              </div>
+              <Skeleton className="h-3.5 w-full" />
+              <div className="flex gap-2">
+                <Skeleton className="h-4 w-16 rounded" />
+                <Skeleton className="h-4 w-20 rounded" />
+                <Skeleton className="h-4 w-16 rounded" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function AgentsSkeleton() {
   return (
     <div className="flex flex-col h-full">

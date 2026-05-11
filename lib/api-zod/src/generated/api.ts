@@ -14,3 +14,723 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * Scores an alert signal, formats the Telegram message, and optionally publishes it.
+ * @summary Preview or publish a scored alert
+ */
+export const createAlertPreviewBodyMarketPriceUsdMin = 0;
+
+export const createAlertPreviewBodyMarketLiquidityUsdMin = 0;
+
+export const createAlertPreviewBodyMarketMarketCapUsdMin = 0;
+
+export const createAlertPreviewBodyMarketVolume24hUsdMin = 0;
+
+export const createAlertPreviewBodyMarketHolderCountMin = 0;
+
+export const createAlertPreviewBodyMarketAgeMinutesMin = 0;
+
+export const createAlertPreviewBodyMarketTxns24hMin = 0;
+
+export const createAlertPreviewBodyMarketBuys24hMin = 0;
+
+export const createAlertPreviewBodyMarketSells24hMin = 0;
+
+export const createAlertPreviewBodyMarketBuyPressurePctMin = 0;
+export const createAlertPreviewBodyMarketBuyPressurePctMax = 100;
+
+export const createAlertPreviewBodyTriggerAmountUsdMin = 0;
+
+export const CreateAlertPreviewBody = zod.object({
+  source: zod
+    .enum(["manual", "helius", "moralis", "alchemy", "dexscreener", "mobula"])
+    .optional(),
+  token: zod.object({
+    chain: zod.enum([
+      "solana",
+      "base",
+      "ethereum",
+      "arbitrum",
+      "bsc",
+      "ton",
+      "monad",
+      "other",
+    ]),
+    symbol: zod.string(),
+    address: zod.string().optional(),
+    name: zod.string().optional(),
+    pairAddress: zod.string().optional(),
+    pairUrl: zod.string().url().optional(),
+    dex: zod.string().optional(),
+  }),
+  market: zod
+    .object({
+      priceUsd: zod
+        .number()
+        .min(createAlertPreviewBodyMarketPriceUsdMin)
+        .optional(),
+      liquidityUsd: zod
+        .number()
+        .min(createAlertPreviewBodyMarketLiquidityUsdMin)
+        .optional(),
+      marketCapUsd: zod
+        .number()
+        .min(createAlertPreviewBodyMarketMarketCapUsdMin)
+        .optional(),
+      volume24hUsd: zod
+        .number()
+        .min(createAlertPreviewBodyMarketVolume24hUsdMin)
+        .optional(),
+      priceChange24hPct: zod.number().optional(),
+      holderCount: zod
+        .number()
+        .min(createAlertPreviewBodyMarketHolderCountMin)
+        .optional(),
+      ageMinutes: zod
+        .number()
+        .min(createAlertPreviewBodyMarketAgeMinutesMin)
+        .optional(),
+      txns24h: zod
+        .number()
+        .min(createAlertPreviewBodyMarketTxns24hMin)
+        .optional(),
+      buys24h: zod
+        .number()
+        .min(createAlertPreviewBodyMarketBuys24hMin)
+        .optional(),
+      sells24h: zod
+        .number()
+        .min(createAlertPreviewBodyMarketSells24hMin)
+        .optional(),
+      buyPressurePct: zod
+        .number()
+        .min(createAlertPreviewBodyMarketBuyPressurePctMin)
+        .max(createAlertPreviewBodyMarketBuyPressurePctMax)
+        .optional(),
+    })
+    .optional(),
+  trigger: zod.object({
+    kind: zod.enum([
+      "new_pair",
+      "large_buy",
+      "volume_spike",
+      "holder_growth",
+      "price_breakout",
+      "manual",
+    ]),
+    amountUsd: zod
+      .number()
+      .min(createAlertPreviewBodyTriggerAmountUsdMin)
+      .optional(),
+    txHash: zod.string().optional(),
+    walletAddress: zod.string().optional(),
+    description: zod.string().optional(),
+  }),
+  narrativeTags: zod.array(zod.string()).optional(),
+  riskFlags: zod.array(zod.string()).optional(),
+  observedAt: zod.coerce.date().optional(),
+  dryRun: zod.boolean().optional(),
+});
+
+export const createAlertPreviewResponseScoreMin = 0;
+export const createAlertPreviewResponseScoreMax = 100;
+
+export const CreateAlertPreviewResponse = zod.object({
+  alertId: zod.string(),
+  score: zod
+    .number()
+    .min(createAlertPreviewResponseScoreMin)
+    .max(createAlertPreviewResponseScoreMax),
+  grade: zod.enum(["A", "B", "C", "D"]),
+  riskLevel: zod.enum(["low", "medium", "high"]),
+  reasons: zod.array(zod.string()),
+  riskFlags: zod.array(zod.string()),
+  message: zod.string(),
+  telegram: zod.object({
+    published: zod.boolean(),
+    dryRun: zod.boolean(),
+    chatId: zod.string().optional(),
+    messageId: zod.number().optional(),
+    reason: zod.string().optional(),
+  }),
+});
+
+/**
+ * Returns normalized live token markets from DexScreener.
+ * @summary List live token markets
+ */
+export const listMarketsQuerySortDefault = `trending`;
+export const listMarketsQueryLimitDefault = 100;
+export const listMarketsQueryLimitMax = 100;
+
+export const ListMarketsQueryParams = zod.object({
+  chain: zod.coerce.string().optional(),
+  q: zod.coerce.string().optional(),
+  sort: zod
+    .enum(["trending", "new", "gainers", "volume", "m5", "h1", "h6", "h24"])
+    .default(listMarketsQuerySortDefault),
+  limit: zod.coerce
+    .number()
+    .min(1)
+    .max(listMarketsQueryLimitMax)
+    .default(listMarketsQueryLimitDefault),
+});
+
+export const listMarketsResponseTotalMin = 0;
+
+export const ListMarketsResponse = zod.object({
+  data: zod.array(
+    zod.object({
+      id: zod.string(),
+      chainId: zod.string(),
+      chainLabel: zod.string(),
+      dexId: zod.string(),
+      url: zod.string().url(),
+      pairAddress: zod.string(),
+      tokenAddress: zod.string(),
+      name: zod.string(),
+      symbol: zod.string(),
+      quoteSymbol: zod.string(),
+      priceUsd: zod.number().optional(),
+      priceNative: zod.string().optional(),
+      marketCap: zod.number().optional(),
+      fdv: zod.number().optional(),
+      liquidityUsd: zod.number().optional(),
+      volume: zod.object({
+        m5: zod.number().optional(),
+        h1: zod.number().optional(),
+        h6: zod.number().optional(),
+        h24: zod.number().optional(),
+      }),
+      priceChange: zod.object({
+        m5: zod.number().optional(),
+        h1: zod.number().optional(),
+        h6: zod.number().optional(),
+        h24: zod.number().optional(),
+      }),
+      txns: zod.object({
+        m5: zod.object({
+          buys: zod.number(),
+          sells: zod.number(),
+        }),
+        h1: zod.object({
+          buys: zod.number(),
+          sells: zod.number(),
+        }),
+        h6: zod.object({
+          buys: zod.number(),
+          sells: zod.number(),
+        }),
+        h24: zod.object({
+          buys: zod.number(),
+          sells: zod.number(),
+        }),
+      }),
+      pairCreatedAt: zod.number().optional(),
+      ageMinutes: zod.number().optional(),
+      imageUrl: zod.string().url().optional(),
+      openGraph: zod.string().url().optional(),
+      description: zod.string().optional(),
+      links: zod.array(
+        zod.object({
+          type: zod.string().optional(),
+          label: zod.string().optional(),
+          url: zod.string().url(),
+        }),
+      ),
+      boostAmount: zod.number().optional(),
+      profileUpdatedAt: zod.coerce.date().optional(),
+      narrativeTags: zod.array(zod.string()),
+      riskFlags: zod.array(zod.string()),
+      signalScore: zod.number(),
+      providers: zod.array(
+        zod.object({
+          provider: zod.enum([
+            "dexscreener",
+            "mobula",
+            "helius",
+            "moralis",
+            "alchemy",
+          ]),
+          status: zod.enum(["live", "demo", "missing_key", "skipped", "error"]),
+          label: zod.string(),
+          detail: zod.string().optional(),
+          value: zod.string().optional(),
+          updatedAt: zod.coerce.date().optional(),
+        }),
+      ),
+      security: zod
+        .object({
+          holderCount: zod.number().optional(),
+          top10HolderPct: zod.number().optional(),
+          buyTax: zod.string().optional(),
+          sellTax: zod.string().optional(),
+          liquidityBurnPct: zod.number().optional(),
+          mintAuthorityDisabled: zod.boolean().optional(),
+          freezeAuthorityDisabled: zod.boolean().optional(),
+          renounced: zod.boolean().optional(),
+          verifiedContract: zod.boolean().optional(),
+          possibleSpam: zod.boolean().optional(),
+        })
+        .optional(),
+    }),
+  ),
+  total: zod.number().min(listMarketsResponseTotalMin),
+  limit: zod.number().min(1),
+  source: zod.enum(["aggregated"]),
+  updatedAt: zod.coerce.date(),
+  providers: zod.array(
+    zod.object({
+      provider: zod.enum([
+        "dexscreener",
+        "mobula",
+        "helius",
+        "moralis",
+        "alchemy",
+      ]),
+      status: zod.enum(["live", "demo", "missing_key", "skipped", "error"]),
+      label: zod.string(),
+      detail: zod.string().optional(),
+      value: zod.string().optional(),
+      updatedAt: zod.coerce.date().optional(),
+    }),
+  ),
+});
+
+/**
+ * Returns market-derived signals ranked by AnyAlpha scoring.
+ * @summary List live market signals
+ */
+export const listMarketSignalsQueryLimitDefault = 12;
+export const listMarketSignalsQueryLimitMax = 50;
+
+export const ListMarketSignalsQueryParams = zod.object({
+  limit: zod.coerce
+    .number()
+    .min(1)
+    .max(listMarketSignalsQueryLimitMax)
+    .default(listMarketSignalsQueryLimitDefault),
+});
+
+export const ListMarketSignalsResponse = zod.object({
+  data: zod.array(
+    zod.object({
+      id: zod.string(),
+      token: zod.object({
+        id: zod.string(),
+        chainId: zod.string(),
+        chainLabel: zod.string(),
+        dexId: zod.string(),
+        url: zod.string().url(),
+        pairAddress: zod.string(),
+        tokenAddress: zod.string(),
+        name: zod.string(),
+        symbol: zod.string(),
+        quoteSymbol: zod.string(),
+        priceUsd: zod.number().optional(),
+        priceNative: zod.string().optional(),
+        marketCap: zod.number().optional(),
+        fdv: zod.number().optional(),
+        liquidityUsd: zod.number().optional(),
+        volume: zod.object({
+          m5: zod.number().optional(),
+          h1: zod.number().optional(),
+          h6: zod.number().optional(),
+          h24: zod.number().optional(),
+        }),
+        priceChange: zod.object({
+          m5: zod.number().optional(),
+          h1: zod.number().optional(),
+          h6: zod.number().optional(),
+          h24: zod.number().optional(),
+        }),
+        txns: zod.object({
+          m5: zod.object({
+            buys: zod.number(),
+            sells: zod.number(),
+          }),
+          h1: zod.object({
+            buys: zod.number(),
+            sells: zod.number(),
+          }),
+          h6: zod.object({
+            buys: zod.number(),
+            sells: zod.number(),
+          }),
+          h24: zod.object({
+            buys: zod.number(),
+            sells: zod.number(),
+          }),
+        }),
+        pairCreatedAt: zod.number().optional(),
+        ageMinutes: zod.number().optional(),
+        imageUrl: zod.string().url().optional(),
+        openGraph: zod.string().url().optional(),
+        description: zod.string().optional(),
+        links: zod.array(
+          zod.object({
+            type: zod.string().optional(),
+            label: zod.string().optional(),
+            url: zod.string().url(),
+          }),
+        ),
+        boostAmount: zod.number().optional(),
+        profileUpdatedAt: zod.coerce.date().optional(),
+        narrativeTags: zod.array(zod.string()),
+        riskFlags: zod.array(zod.string()),
+        signalScore: zod.number(),
+        providers: zod.array(
+          zod.object({
+            provider: zod.enum([
+              "dexscreener",
+              "mobula",
+              "helius",
+              "moralis",
+              "alchemy",
+            ]),
+            status: zod.enum([
+              "live",
+              "demo",
+              "missing_key",
+              "skipped",
+              "error",
+            ]),
+            label: zod.string(),
+            detail: zod.string().optional(),
+            value: zod.string().optional(),
+            updatedAt: zod.coerce.date().optional(),
+          }),
+        ),
+        security: zod
+          .object({
+            holderCount: zod.number().optional(),
+            top10HolderPct: zod.number().optional(),
+            buyTax: zod.string().optional(),
+            sellTax: zod.string().optional(),
+            liquidityBurnPct: zod.number().optional(),
+            mintAuthorityDisabled: zod.boolean().optional(),
+            freezeAuthorityDisabled: zod.boolean().optional(),
+            renounced: zod.boolean().optional(),
+            verifiedContract: zod.boolean().optional(),
+            possibleSpam: zod.boolean().optional(),
+          })
+          .optional(),
+      }),
+      title: zod.string(),
+      sentiment: zod.enum(["Bullish", "Bearish", "Watch"]),
+      reason: zod.string(),
+      tags: zod.array(zod.string()),
+      score: zod.number(),
+    }),
+  ),
+  source: zod.enum(["aggregated"]),
+  updatedAt: zod.coerce.date(),
+  providers: zod.array(
+    zod.object({
+      provider: zod.enum([
+        "dexscreener",
+        "mobula",
+        "helius",
+        "moralis",
+        "alchemy",
+      ]),
+      status: zod.enum(["live", "demo", "missing_key", "skipped", "error"]),
+      label: zod.string(),
+      detail: zod.string().optional(),
+      value: zod.string().optional(),
+      updatedAt: zod.coerce.date().optional(),
+    }),
+  ),
+});
+
+/**
+ * Returns normalized pair detail for a token across available pools.
+ * @summary Get token market detail
+ */
+export const GetMarketTokenParams = zod.object({
+  chainId: zod.coerce.string(),
+  tokenAddress: zod.coerce.string(),
+});
+
+export const getMarketTokenResponseHoldersTotalMin = 0;
+
+export const GetMarketTokenResponse = zod.object({
+  token: zod.object({
+    id: zod.string(),
+    chainId: zod.string(),
+    chainLabel: zod.string(),
+    dexId: zod.string(),
+    url: zod.string().url(),
+    pairAddress: zod.string(),
+    tokenAddress: zod.string(),
+    name: zod.string(),
+    symbol: zod.string(),
+    quoteSymbol: zod.string(),
+    priceUsd: zod.number().optional(),
+    priceNative: zod.string().optional(),
+    marketCap: zod.number().optional(),
+    fdv: zod.number().optional(),
+    liquidityUsd: zod.number().optional(),
+    volume: zod.object({
+      m5: zod.number().optional(),
+      h1: zod.number().optional(),
+      h6: zod.number().optional(),
+      h24: zod.number().optional(),
+    }),
+    priceChange: zod.object({
+      m5: zod.number().optional(),
+      h1: zod.number().optional(),
+      h6: zod.number().optional(),
+      h24: zod.number().optional(),
+    }),
+    txns: zod.object({
+      m5: zod.object({
+        buys: zod.number(),
+        sells: zod.number(),
+      }),
+      h1: zod.object({
+        buys: zod.number(),
+        sells: zod.number(),
+      }),
+      h6: zod.object({
+        buys: zod.number(),
+        sells: zod.number(),
+      }),
+      h24: zod.object({
+        buys: zod.number(),
+        sells: zod.number(),
+      }),
+    }),
+    pairCreatedAt: zod.number().optional(),
+    ageMinutes: zod.number().optional(),
+    imageUrl: zod.string().url().optional(),
+    openGraph: zod.string().url().optional(),
+    description: zod.string().optional(),
+    links: zod.array(
+      zod.object({
+        type: zod.string().optional(),
+        label: zod.string().optional(),
+        url: zod.string().url(),
+      }),
+    ),
+    boostAmount: zod.number().optional(),
+    profileUpdatedAt: zod.coerce.date().optional(),
+    narrativeTags: zod.array(zod.string()),
+    riskFlags: zod.array(zod.string()),
+    signalScore: zod.number(),
+    providers: zod.array(
+      zod.object({
+        provider: zod.enum([
+          "dexscreener",
+          "mobula",
+          "helius",
+          "moralis",
+          "alchemy",
+        ]),
+        status: zod.enum(["live", "demo", "missing_key", "skipped", "error"]),
+        label: zod.string(),
+        detail: zod.string().optional(),
+        value: zod.string().optional(),
+        updatedAt: zod.coerce.date().optional(),
+      }),
+    ),
+    security: zod
+      .object({
+        holderCount: zod.number().optional(),
+        top10HolderPct: zod.number().optional(),
+        buyTax: zod.string().optional(),
+        sellTax: zod.string().optional(),
+        liquidityBurnPct: zod.number().optional(),
+        mintAuthorityDisabled: zod.boolean().optional(),
+        freezeAuthorityDisabled: zod.boolean().optional(),
+        renounced: zod.boolean().optional(),
+        verifiedContract: zod.boolean().optional(),
+        possibleSpam: zod.boolean().optional(),
+      })
+      .optional(),
+  }),
+  pairs: zod.array(
+    zod.object({
+      id: zod.string(),
+      chainId: zod.string(),
+      chainLabel: zod.string(),
+      dexId: zod.string(),
+      url: zod.string().url(),
+      pairAddress: zod.string(),
+      tokenAddress: zod.string(),
+      name: zod.string(),
+      symbol: zod.string(),
+      quoteSymbol: zod.string(),
+      priceUsd: zod.number().optional(),
+      priceNative: zod.string().optional(),
+      marketCap: zod.number().optional(),
+      fdv: zod.number().optional(),
+      liquidityUsd: zod.number().optional(),
+      volume: zod.object({
+        m5: zod.number().optional(),
+        h1: zod.number().optional(),
+        h6: zod.number().optional(),
+        h24: zod.number().optional(),
+      }),
+      priceChange: zod.object({
+        m5: zod.number().optional(),
+        h1: zod.number().optional(),
+        h6: zod.number().optional(),
+        h24: zod.number().optional(),
+      }),
+      txns: zod.object({
+        m5: zod.object({
+          buys: zod.number(),
+          sells: zod.number(),
+        }),
+        h1: zod.object({
+          buys: zod.number(),
+          sells: zod.number(),
+        }),
+        h6: zod.object({
+          buys: zod.number(),
+          sells: zod.number(),
+        }),
+        h24: zod.object({
+          buys: zod.number(),
+          sells: zod.number(),
+        }),
+      }),
+      pairCreatedAt: zod.number().optional(),
+      ageMinutes: zod.number().optional(),
+      imageUrl: zod.string().url().optional(),
+      openGraph: zod.string().url().optional(),
+      description: zod.string().optional(),
+      links: zod.array(
+        zod.object({
+          type: zod.string().optional(),
+          label: zod.string().optional(),
+          url: zod.string().url(),
+        }),
+      ),
+      boostAmount: zod.number().optional(),
+      profileUpdatedAt: zod.coerce.date().optional(),
+      narrativeTags: zod.array(zod.string()),
+      riskFlags: zod.array(zod.string()),
+      signalScore: zod.number(),
+      providers: zod.array(
+        zod.object({
+          provider: zod.enum([
+            "dexscreener",
+            "mobula",
+            "helius",
+            "moralis",
+            "alchemy",
+          ]),
+          status: zod.enum(["live", "demo", "missing_key", "skipped", "error"]),
+          label: zod.string(),
+          detail: zod.string().optional(),
+          value: zod.string().optional(),
+          updatedAt: zod.coerce.date().optional(),
+        }),
+      ),
+      security: zod
+        .object({
+          holderCount: zod.number().optional(),
+          top10HolderPct: zod.number().optional(),
+          buyTax: zod.string().optional(),
+          sellTax: zod.string().optional(),
+          liquidityBurnPct: zod.number().optional(),
+          mintAuthorityDisabled: zod.boolean().optional(),
+          freezeAuthorityDisabled: zod.boolean().optional(),
+          renounced: zod.boolean().optional(),
+          verifiedContract: zod.boolean().optional(),
+          possibleSpam: zod.boolean().optional(),
+        })
+        .optional(),
+    }),
+  ),
+  trades: zod.array(
+    zod.object({
+      id: zod.string(),
+      type: zod.string(),
+      operation: zod.string().optional(),
+      baseTokenAmount: zod.number().optional(),
+      baseTokenAmountUsd: zod.number().optional(),
+      quoteTokenAmount: zod.number().optional(),
+      quoteTokenAmountUsd: zod.number().optional(),
+      timestamp: zod.number().optional(),
+      transactionHash: zod.string().optional(),
+      marketAddress: zod.string().optional(),
+      makerAddress: zod.string().optional(),
+      senderAddress: zod.string().optional(),
+      priceUsd: zod.number().optional(),
+      marketCapUsd: zod.number().optional(),
+      labels: zod.array(zod.string()),
+      platform: zod
+        .object({
+          id: zod.string().optional(),
+          name: zod.string().optional(),
+          logo: zod.string().url().optional(),
+        })
+        .optional(),
+    }),
+  ),
+  holders: zod.array(
+    zod.object({
+      walletAddress: zod.string(),
+      tokenAmount: zod.number().optional(),
+      tokenAmountUsd: zod.number().optional(),
+      percentageOfTotalSupply: zod.number().optional(),
+      realizedPnlUsd: zod.number().optional(),
+      unrealizedPnlUsd: zod.number().optional(),
+      totalPnlUsd: zod.number().optional(),
+      buys: zod.number().optional(),
+      sells: zod.number().optional(),
+      avgBuyPriceUsd: zod.number().optional(),
+      avgSellPriceUsd: zod.number().optional(),
+      firstTradeAt: zod.number().optional(),
+      lastTradeAt: zod.number().optional(),
+      lastActivityAt: zod.number().optional(),
+      labels: zod.array(zod.string()),
+      walletMetadata: zod
+        .object({
+          entityName: zod.string().optional(),
+          entityLogo: zod.string().url().optional(),
+          entityType: zod.string().optional(),
+          entityLabels: zod.array(zod.string()),
+          entityTwitter: zod.string().url().optional(),
+          entityWebsite: zod.string().url().optional(),
+          entityTelegram: zod.string().url().optional(),
+          entityGithub: zod.string().url().optional(),
+          entityDiscord: zod.string().url().optional(),
+        })
+        .optional(),
+      platform: zod
+        .object({
+          id: zod.string().optional(),
+          name: zod.string().optional(),
+          logo: zod.string().url().optional(),
+        })
+        .optional(),
+    }),
+  ),
+  holdersTotal: zod
+    .number()
+    .min(getMarketTokenResponseHoldersTotalMin)
+    .optional(),
+  source: zod.enum(["aggregated"]),
+  updatedAt: zod.coerce.date(),
+  providers: zod.array(
+    zod.object({
+      provider: zod.enum([
+        "dexscreener",
+        "mobula",
+        "helius",
+        "moralis",
+        "alchemy",
+      ]),
+      status: zod.enum(["live", "demo", "missing_key", "skipped", "error"]),
+      label: zod.string(),
+      detail: zod.string().optional(),
+      value: zod.string().optional(),
+      updatedAt: zod.coerce.date().optional(),
+    }),
+  ),
+});

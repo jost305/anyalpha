@@ -178,6 +178,72 @@
 .flash-up-text   { animation: flash-up-text   700ms ease-out forwards; }
 .flash-down-text { animation: flash-down-text 700ms ease-out forwards; }
 
+@keyframes market-update-up {
+  0% {
+    background-color: transparent;
+    box-shadow: 0 0 0 0 transparent;
+    transform: scale(1);
+  }
+  35% {
+    background-color: oklch(0.5 0.3 142 / 0.12);
+    box-shadow: 0 0 0 1px oklch(0.5 0.3 142 / 0.16);
+    transform: scale(1.018);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: 0 0 0 0 transparent;
+    transform: scale(1);
+  }
+}
+
+@keyframes market-update-down {
+  0% {
+    background-color: transparent;
+    box-shadow: 0 0 0 0 transparent;
+    transform: scale(1);
+  }
+  35% {
+    background-color: oklch(0.5 0.28 25 / 0.12);
+    box-shadow: 0 0 0 1px oklch(0.5 0.28 25 / 0.16);
+    transform: scale(1.018);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: 0 0 0 0 transparent;
+    transform: scale(1);
+  }
+}
+
+@keyframes market-update-pulse {
+  0% {
+    background-color: transparent;
+    box-shadow: 0 0 0 0 transparent;
+    transform: scale(1);
+  }
+  35% {
+    background-color: oklch(0.6 0.28 290 / 0.1);
+    box-shadow: 0 0 0 1px oklch(0.6 0.28 290 / 0.16);
+    transform: scale(1.014);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: 0 0 0 0 transparent;
+    transform: scale(1);
+  }
+}
+
+.market-update-up {
+  animation: market-update-up 950ms ease-out forwards;
+}
+
+.market-update-down {
+  animation: market-update-down 950ms ease-out forwards;
+}
+
+.market-update-pulse {
+  animation: market-update-pulse 950ms ease-out forwards;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

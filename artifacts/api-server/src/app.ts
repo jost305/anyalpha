@@ -1,3 +1,4 @@
+import "./lib/load-env";
 import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";

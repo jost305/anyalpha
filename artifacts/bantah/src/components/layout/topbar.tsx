@@ -1,44 +1,70 @@
-import { Search, Bell, Crown, Menu, Wallet, X } from 'lucide-react';
+import { Search, Bell, Crown, Menu, Moon, Sun, Wallet, X } from 'lucide-react';
 import { useTheme } from '@/lib/theme-provider';
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import MobileDrawer from './mobile-drawer';
 import SignInModal from '@/components/modals/signin-modal';
-import { searchTokens, fmtSearchPrice, type SearchToken } from '@/lib/market-data';
-
-const hotMarkets = [
-  { emoji: '🔥', name: 'PEPEFUN', change: '62% Yes', positive: true },
-  { emoji: '😈', name: 'SMEW',    change: '58% Yes', positive: true },
-  { emoji: '⚔️', name: 'SWIF',   change: '41% Yes', positive: false },
-  { emoji: '🎲', name: '$AI1G2',  change: '67% Yes', positive: true },
-  { emoji: '🎺', name: '$BONK',   change: '55% Yes', positive: true },
-];
+import {
+  fetchMarkets,
+  fmtPct,
+  fmtPrice,
+  marketPairLabel,
+  searchMarketTokens,
+  type MarketToken,
+} from '@/lib/market-data';
 
 interface TopBarProps {
   onConnectWallet?: () => void;
   onBellClick?: () => void;
-  onSelectToken?: (name: string) => void;
+  onSelectToken?: (market: MarketToken) => void;
   unreadCount?: number;
 }
 
 export default function TopBar({ onBellClick, onSelectToken, unreadCount = 0 }: TopBarProps) {
   const { theme, toggleTheme } = useTheme();
-  const [drawerOpen, setDrawerOpen]       = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [walletModalOpen, setWalletModalOpen] = useState(false);
-  const [connected, setConnected]         = useState(false);
-  const [query, setQuery]                 = useState('');
-  const [results, setResults]             = useState<SearchToken[]>([]);
-  const [searchOpen, setSearchOpen]       = useState(false);
-  const [focused, setFocused]             = useState(false);
-  const searchRef                         = useRef<HTMLDivElement>(null);
+  const [connected, setConnected] = useState(false);
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<MarketToken[]>([]);
+  const [hotMarkets, setHotMarkets] = useState<MarketToken[]>([]);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
 
-  // Update results whenever query changes
   useEffect(() => {
-    const hits = searchTokens(query);
-    setResults(hits);
-    setSearchOpen(hits.length > 0 && focused);
-  }, [query, focused]);
+    const controller = new AbortController();
 
-  // Close dropdown on outside click
+    fetchMarkets({ sort: 'trending', limit: 8, signal: controller.signal })
+      .then((response) => setHotMarkets(response.data))
+      .catch(() => {
+        if (!controller.signal.aborted) setHotMarkets([]);
+      });
+
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      searchMarketTokens(query, controller.signal)
+        .then((hits) => {
+          setResults(hits);
+          setSearchOpen(hits.length > 0 && focused);
+        })
+        .catch(() => {
+          if (!controller.signal.aborted) {
+            setResults([]);
+            setSearchOpen(false);
+          }
+        });
+    }, query.trim() ? 250 : 0);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [focused, query]);
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
@@ -50,8 +76,8 @@ export default function TopBar({ onBellClick, onSelectToken, unreadCount = 0 }: 
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const handleSelectResult = (token: SearchToken) => {
-    onSelectToken?.(token.name);
+  const handleSelectResult = (token: MarketToken) => {
+    onSelectToken?.(token);
     setQuery('');
     setSearchOpen(false);
     setFocused(false);
@@ -78,7 +104,6 @@ export default function TopBar({ onBellClick, onSelectToken, unreadCount = 0 }: 
             <Menu size={20} />
           </button>
 
-          {/* Search bar */}
           <div ref={searchRef} className="flex-1 relative">
             <div className={`flex items-center bg-input rounded px-3 py-1.5 transition ${focused ? 'ring-1 ring-primary/50' : ''}`}>
               <Search size={16} className="text-muted-foreground shrink-0" />
@@ -88,7 +113,7 @@ export default function TopBar({ onBellClick, onSelectToken, unreadCount = 0 }: 
                 onChange={e => setQuery(e.target.value)}
                 onFocus={() => setFocused(true)}
                 onKeyDown={e => { if (e.key === 'Escape') { clearSearch(); (e.target as HTMLInputElement).blur(); } }}
-                placeholder="Search token, topic or market..."
+                placeholder="Search live token, pair, or chain..."
                 className="flex-1 bg-transparent text-sm outline-none pl-2 placeholder:text-muted-foreground"
               />
               {query ? (
@@ -100,32 +125,34 @@ export default function TopBar({ onBellClick, onSelectToken, unreadCount = 0 }: 
               )}
             </div>
 
-            {/* Search dropdown */}
             {searchOpen && results.length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded shadow-xl z-50 overflow-hidden">
                 <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground border-b border-border uppercase tracking-wider">
-                  Tokens — {results.length} result{results.length !== 1 ? 's' : ''}
+                  Live pairs - {results.length} result{results.length !== 1 ? 's' : ''}
                 </div>
                 {results.map(t => (
                   <button
-                    key={t.name}
+                    key={t.id}
                     onMouseDown={() => handleSelectResult(t)}
                     className="w-full flex items-center gap-3 px-3 py-2 hover:bg-muted/50 transition text-left"
                   >
-                    <span className="text-lg leading-none">{t.emoji}</span>
+                    {t.imageUrl ? (
+                      <img src={t.imageUrl} alt={t.symbol} className="w-6 h-6 rounded-full object-cover bg-muted" />
+                    ) : (
+                      <span className="w-6 h-6 rounded-full bg-primary/15 border border-primary/30 text-primary text-[9px] font-black flex items-center justify-center">
+                        {t.symbol.slice(0, 2).toUpperCase()}
+                      </span>
+                    )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-foreground">{t.pair}</span>
-                        <span
-                          className="text-[9px] font-semibold px-1 py-0.5 rounded text-white"
-                          style={{ backgroundColor: t.chainColor }}
-                        >
-                          {t.chain}
+                        <span className="text-xs font-bold text-foreground">{marketPairLabel(t)}</span>
+                        <span className="text-[9px] font-semibold px-1 py-0.5 rounded bg-muted text-muted-foreground border border-border">
+                          {t.chainLabel}
                         </span>
                       </div>
-                      <div className="text-[10px] text-muted-foreground">{t.name}</div>
+                      <div className="text-[10px] text-muted-foreground truncate">{t.name}</div>
                     </div>
-                    <span className="text-xs font-mono text-muted-foreground shrink-0">{fmtSearchPrice(t.price)}</span>
+                    <span className="text-xs font-mono text-muted-foreground shrink-0">{fmtPrice(t.priceUsd)}</span>
                   </button>
                 ))}
               </div>
@@ -134,7 +161,6 @@ export default function TopBar({ onBellClick, onSelectToken, unreadCount = 0 }: 
 
           <div className="flex items-center gap-1.5">
             <div className="hidden sm:flex text-sm px-2 py-1.5 bg-input rounded items-center gap-1.5">
-              <span>😊</span>
               <span className="text-xs">BXBT</span>
               <span className="text-primary font-bold text-xs">1,245.50</span>
             </div>
@@ -142,7 +168,6 @@ export default function TopBar({ onBellClick, onSelectToken, unreadCount = 0 }: 
               <Crown size={18} className="text-primary" />
             </button>
 
-            {/* Bell — navigates to notifications page */}
             <button
               onClick={onBellClick}
               className="p-1.5 hover:bg-sidebar-accent rounded transition relative"
@@ -161,14 +186,14 @@ export default function TopBar({ onBellClick, onSelectToken, unreadCount = 0 }: 
               )}
             </button>
 
-            <button onClick={toggleTheme} className="p-1.5 hover:bg-sidebar-accent rounded transition">
-              <span className="text-xl">{theme === 'dark' ? '☀️' : '🌙'}</span>
+            <button onClick={toggleTheme} className="p-1.5 hover:bg-sidebar-accent rounded transition" title="Toggle theme">
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </button>
             {connected ? (
               <button className="hidden sm:flex text-xs px-2 py-1.5 hover:bg-sidebar-accent rounded transition items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-secondary" />
                 <span>0xBan...Bro</span>
-                <span>▼</span>
+                <span>v</span>
               </button>
             ) : (
               <button
@@ -182,32 +207,39 @@ export default function TopBar({ onBellClick, onSelectToken, unreadCount = 0 }: 
           </div>
         </div>
 
-        <div className="hidden sm:flex items-center border-t border-border bg-background/50 shrink-0 overflow-hidden relative">
-          {/* Fade edges */}
-          <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 z-10 bg-gradient-to-r from-background/80 to-transparent" />
-          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-l from-background/80 to-transparent" />
+        {hotMarkets.length > 0 && (
+          <div className="hidden sm:flex items-center border-t border-border bg-background/50 shrink-0 overflow-hidden relative">
+            <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 z-10 bg-gradient-to-r from-background/80 to-transparent" />
+            <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-l from-background/80 to-transparent" />
 
-          {/* Scrolling ticker — items doubled for seamless loop */}
-          <div className="ticker-track py-1 gap-2">
-            {[...hotMarkets, ...hotMarkets].map((market, i) => (
-              <button
-                key={`${market.name}-${i}`}
-                onClick={() => onSelectToken?.(market.name)}
-                className="ticker-pill flex items-center gap-1.5 bg-input px-2 py-1 rounded text-xs hover:bg-sidebar-accent transition whitespace-nowrap mx-1"
-                style={{ animationDelay: `${(i % hotMarkets.length) * 0.6}s` }}
-              >
-                <span>{market.emoji}</span>
-                <span className="font-bold">{market.name}</span>
-                <span className={market.positive ? 'text-green-400' : 'text-red-400'}>{market.change}</span>
-              </button>
-            ))}
+            <div className="ticker-track py-1 gap-2">
+              {[...hotMarkets, ...hotMarkets].map((market, i) => (
+                <button
+                  key={`${market.id}-${i}`}
+                  onClick={() => onSelectToken?.(market)}
+                  className="ticker-pill flex items-center gap-1.5 bg-input px-2 py-1 rounded text-xs hover:bg-sidebar-accent transition whitespace-nowrap mx-1"
+                  style={{ animationDelay: `${(i % hotMarkets.length) * 0.6}s` }}
+                >
+                  {market.imageUrl ? (
+                    <img src={market.imageUrl} alt={market.symbol} className="w-4 h-4 rounded-full object-cover" />
+                  ) : (
+                    <span className="w-4 h-4 rounded-full bg-muted-foreground/20 text-[8px] flex items-center justify-center">
+                      {market.symbol.slice(0, 1)}
+                    </span>
+                  )}
+                  <span className="font-bold">{market.symbol}</span>
+                  <span className={(market.priceChange.h24 ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'}>
+                    {fmtPct(market.priceChange.h24)}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <button className="absolute right-2 z-20 text-xs text-primary hover:underline whitespace-nowrap font-semibold bg-background/80 pl-1">
+              Live feed
+            </button>
           </div>
-
-          {/* Pinned "View all" */}
-          <button className="absolute right-2 z-20 text-xs text-primary hover:underline whitespace-nowrap font-semibold bg-background/80 pl-1">
-            View all →
-          </button>
-        </div>
+        )}
       </div>
     </>
   );

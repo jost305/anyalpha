@@ -8,3 +8,408 @@
 export interface HealthStatus {
   status: string;
 }
+
+export type AlertSource = (typeof AlertSource)[keyof typeof AlertSource];
+
+export const AlertSource = {
+  manual: "manual",
+  helius: "helius",
+  moralis: "moralis",
+  alchemy: "alchemy",
+  dexscreener: "dexscreener",
+  mobula: "mobula",
+} as const;
+
+export type AlertChain = (typeof AlertChain)[keyof typeof AlertChain];
+
+export const AlertChain = {
+  solana: "solana",
+  base: "base",
+  ethereum: "ethereum",
+  arbitrum: "arbitrum",
+  bsc: "bsc",
+  ton: "ton",
+  monad: "monad",
+  other: "other",
+} as const;
+
+export type AlertTriggerKind =
+  (typeof AlertTriggerKind)[keyof typeof AlertTriggerKind];
+
+export const AlertTriggerKind = {
+  new_pair: "new_pair",
+  large_buy: "large_buy",
+  volume_spike: "volume_spike",
+  holder_growth: "holder_growth",
+  price_breakout: "price_breakout",
+  manual: "manual",
+} as const;
+
+export type AlertRiskLevel =
+  (typeof AlertRiskLevel)[keyof typeof AlertRiskLevel];
+
+export const AlertRiskLevel = {
+  low: "low",
+  medium: "medium",
+  high: "high",
+} as const;
+
+export interface AlertToken {
+  chain: AlertChain;
+  symbol: string;
+  address?: string;
+  name?: string;
+  pairAddress?: string;
+  pairUrl?: string;
+  dex?: string;
+}
+
+export interface AlertMarket {
+  /** @minimum 0 */
+  priceUsd?: number;
+  /** @minimum 0 */
+  liquidityUsd?: number;
+  /** @minimum 0 */
+  marketCapUsd?: number;
+  /** @minimum 0 */
+  volume24hUsd?: number;
+  priceChange24hPct?: number;
+  /** @minimum 0 */
+  holderCount?: number;
+  /** @minimum 0 */
+  ageMinutes?: number;
+  /** @minimum 0 */
+  txns24h?: number;
+  /** @minimum 0 */
+  buys24h?: number;
+  /** @minimum 0 */
+  sells24h?: number;
+  /**
+   * @minimum 0
+   * @maximum 100
+   */
+  buyPressurePct?: number;
+}
+
+export interface AlertTrigger {
+  kind: AlertTriggerKind;
+  /** @minimum 0 */
+  amountUsd?: number;
+  txHash?: string;
+  walletAddress?: string;
+  description?: string;
+}
+
+export interface AlertPreviewRequest {
+  source?: AlertSource;
+  token: AlertToken;
+  market?: AlertMarket;
+  trigger: AlertTrigger;
+  narrativeTags?: string[];
+  riskFlags?: string[];
+  observedAt?: string;
+  dryRun?: boolean;
+}
+
+export interface TelegramPublishResult {
+  published: boolean;
+  dryRun: boolean;
+  chatId?: string;
+  messageId?: number;
+  reason?: string;
+}
+
+export type AlertPreviewResponseGrade =
+  (typeof AlertPreviewResponseGrade)[keyof typeof AlertPreviewResponseGrade];
+
+export const AlertPreviewResponseGrade = {
+  A: "A",
+  B: "B",
+  C: "C",
+  D: "D",
+} as const;
+
+export interface AlertPreviewResponse {
+  alertId: string;
+  /**
+   * @minimum 0
+   * @maximum 100
+   */
+  score: number;
+  grade: AlertPreviewResponseGrade;
+  riskLevel: AlertRiskLevel;
+  reasons: string[];
+  riskFlags: string[];
+  message: string;
+  telegram: TelegramPublishResult;
+}
+
+export type ApiErrorIssuesItem = { [key: string]: unknown };
+
+export interface ApiError {
+  error: string;
+  issues?: ApiErrorIssuesItem[];
+}
+
+export interface MarketPeriodStats {
+  m5?: number;
+  h1?: number;
+  h6?: number;
+  h24?: number;
+}
+
+export interface MarketTxnStats {
+  buys: number;
+  sells: number;
+}
+
+export interface MarketTokenLink {
+  type?: string;
+  label?: string;
+  url: string;
+}
+
+export type MarketProviderSnapshotProvider =
+  (typeof MarketProviderSnapshotProvider)[keyof typeof MarketProviderSnapshotProvider];
+
+export const MarketProviderSnapshotProvider = {
+  dexscreener: "dexscreener",
+  mobula: "mobula",
+  helius: "helius",
+  moralis: "moralis",
+  alchemy: "alchemy",
+} as const;
+
+export type MarketProviderSnapshotStatus =
+  (typeof MarketProviderSnapshotStatus)[keyof typeof MarketProviderSnapshotStatus];
+
+export const MarketProviderSnapshotStatus = {
+  live: "live",
+  demo: "demo",
+  missing_key: "missing_key",
+  skipped: "skipped",
+  error: "error",
+} as const;
+
+export interface MarketProviderSnapshot {
+  provider: MarketProviderSnapshotProvider;
+  status: MarketProviderSnapshotStatus;
+  label: string;
+  detail?: string;
+  value?: string;
+  updatedAt?: string;
+}
+
+export interface MarketTokenSecurity {
+  holderCount?: number;
+  top10HolderPct?: number;
+  buyTax?: string;
+  sellTax?: string;
+  liquidityBurnPct?: number;
+  mintAuthorityDisabled?: boolean;
+  freezeAuthorityDisabled?: boolean;
+  renounced?: boolean;
+  verifiedContract?: boolean;
+  possibleSpam?: boolean;
+}
+
+export interface MarketTokenTradePlatform {
+  id?: string;
+  name?: string;
+  logo?: string;
+}
+
+export interface MarketTokenTrade {
+  id: string;
+  type: string;
+  operation?: string;
+  baseTokenAmount?: number;
+  baseTokenAmountUsd?: number;
+  quoteTokenAmount?: number;
+  quoteTokenAmountUsd?: number;
+  timestamp?: number;
+  transactionHash?: string;
+  marketAddress?: string;
+  makerAddress?: string;
+  senderAddress?: string;
+  priceUsd?: number;
+  marketCapUsd?: number;
+  labels: string[];
+  platform?: MarketTokenTradePlatform;
+}
+
+export interface MarketTokenHolderMetadata {
+  entityName?: string;
+  entityLogo?: string;
+  entityType?: string;
+  entityLabels: string[];
+  entityTwitter?: string;
+  entityWebsite?: string;
+  entityTelegram?: string;
+  entityGithub?: string;
+  entityDiscord?: string;
+}
+
+export interface MarketTokenHolderPosition {
+  walletAddress: string;
+  tokenAmount?: number;
+  tokenAmountUsd?: number;
+  percentageOfTotalSupply?: number;
+  realizedPnlUsd?: number;
+  unrealizedPnlUsd?: number;
+  totalPnlUsd?: number;
+  buys?: number;
+  sells?: number;
+  avgBuyPriceUsd?: number;
+  avgSellPriceUsd?: number;
+  firstTradeAt?: number;
+  lastTradeAt?: number;
+  lastActivityAt?: number;
+  labels: string[];
+  walletMetadata?: MarketTokenHolderMetadata;
+  platform?: MarketTokenTradePlatform;
+}
+
+export type MarketTokenTxns = {
+  m5: MarketTxnStats;
+  h1: MarketTxnStats;
+  h6: MarketTxnStats;
+  h24: MarketTxnStats;
+};
+
+export interface MarketToken {
+  id: string;
+  chainId: string;
+  chainLabel: string;
+  dexId: string;
+  url: string;
+  pairAddress: string;
+  tokenAddress: string;
+  name: string;
+  symbol: string;
+  quoteSymbol: string;
+  priceUsd?: number;
+  priceNative?: string;
+  marketCap?: number;
+  fdv?: number;
+  liquidityUsd?: number;
+  volume: MarketPeriodStats;
+  priceChange: MarketPeriodStats;
+  txns: MarketTokenTxns;
+  pairCreatedAt?: number;
+  ageMinutes?: number;
+  imageUrl?: string;
+  openGraph?: string;
+  description?: string;
+  links: MarketTokenLink[];
+  boostAmount?: number;
+  profileUpdatedAt?: string;
+  narrativeTags: string[];
+  riskFlags: string[];
+  signalScore: number;
+  providers: MarketProviderSnapshot[];
+  security?: MarketTokenSecurity;
+}
+
+export type MarketListResponseSource =
+  (typeof MarketListResponseSource)[keyof typeof MarketListResponseSource];
+
+export const MarketListResponseSource = {
+  aggregated: "aggregated",
+} as const;
+
+export interface MarketListResponse {
+  data: MarketToken[];
+  /** @minimum 0 */
+  total: number;
+  /** @minimum 1 */
+  limit: number;
+  source: MarketListResponseSource;
+  updatedAt: string;
+  providers: MarketProviderSnapshot[];
+}
+
+export type MarketSignalSentiment =
+  (typeof MarketSignalSentiment)[keyof typeof MarketSignalSentiment];
+
+export const MarketSignalSentiment = {
+  Bullish: "Bullish",
+  Bearish: "Bearish",
+  Watch: "Watch",
+} as const;
+
+export interface MarketSignal {
+  id: string;
+  token: MarketToken;
+  title: string;
+  sentiment: MarketSignalSentiment;
+  reason: string;
+  tags: string[];
+  score: number;
+}
+
+export type MarketSignalsResponseSource =
+  (typeof MarketSignalsResponseSource)[keyof typeof MarketSignalsResponseSource];
+
+export const MarketSignalsResponseSource = {
+  aggregated: "aggregated",
+} as const;
+
+export interface MarketSignalsResponse {
+  data: MarketSignal[];
+  source: MarketSignalsResponseSource;
+  updatedAt: string;
+  providers: MarketProviderSnapshot[];
+}
+
+export type MarketDetailResponseSource =
+  (typeof MarketDetailResponseSource)[keyof typeof MarketDetailResponseSource];
+
+export const MarketDetailResponseSource = {
+  aggregated: "aggregated",
+} as const;
+
+export interface MarketDetailResponse {
+  token: MarketToken;
+  pairs: MarketToken[];
+  trades: MarketTokenTrade[];
+  holders: MarketTokenHolderPosition[];
+  /** @minimum 0 */
+  holdersTotal?: number;
+  source: MarketDetailResponseSource;
+  updatedAt: string;
+  providers: MarketProviderSnapshot[];
+}
+
+export type ListMarketsParams = {
+  chain?: string;
+  q?: string;
+  sort?: ListMarketsSort;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
+  limit?: number;
+};
+
+export type ListMarketsSort =
+  (typeof ListMarketsSort)[keyof typeof ListMarketsSort];
+
+export const ListMarketsSort = {
+  trending: "trending",
+  new: "new",
+  gainers: "gainers",
+  volume: "volume",
+  m5: "m5",
+  h1: "h1",
+  h6: "h6",
+  h24: "h24",
+} as const;
+
+export type ListMarketSignalsParams = {
+  /**
+   * @minimum 1
+   * @maximum 50
+   */
+  limit?: number;
+};

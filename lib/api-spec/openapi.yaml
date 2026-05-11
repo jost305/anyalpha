@@ -10,6 +10,10 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: alerts
+    description: Alert scoring and publishing operations
+  - name: markets
+    description: Live token market data operations
 paths:
   /healthz:
     get:
@@ -24,6 +28,122 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /alerts/preview:
+    post:
+      operationId: createAlertPreview
+      tags: [alerts]
+      summary: Preview or publish a scored alert
+      description: Scores an alert signal, formats the Telegram message, and optionally publishes it.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlertPreviewRequest"
+      responses:
+        "200":
+          description: Alert preview result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlertPreviewResponse"
+        "400":
+          description: Invalid alert preview request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /markets:
+    get:
+      operationId: listMarkets
+      tags: [markets]
+      summary: List live token markets
+      description: Returns normalized live token markets from DexScreener.
+      parameters:
+        - in: query
+          name: chain
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: q
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [trending, new, gainers, volume, m5, h1, h6, h24]
+            default: trending
+          required: false
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 100
+          required: false
+      responses:
+        "200":
+          description: Live market list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketListResponse"
+  /markets/signals:
+    get:
+      operationId: listMarketSignals
+      tags: [markets]
+      summary: List live market signals
+      description: Returns market-derived signals ranked by AnyAlpha scoring.
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 12
+          required: false
+      responses:
+        "200":
+          description: Live market signals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketSignalsResponse"
+  /markets/token/{chainId}/{tokenAddress}:
+    get:
+      operationId: getMarketToken
+      tags: [markets]
+      summary: Get token market detail
+      description: Returns normalized pair detail for a token across available pools.
+      parameters:
+        - in: path
+          name: chainId
+          schema:
+            type: string
+          required: true
+        - in: path
+          name: tokenAddress
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Token market detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketDetailResponse"
+        "404":
+          description: Token market not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +153,657 @@ components:
           type: string
       required:
         - status
-
+    AlertSource:
+      type: string
+      enum:
+        - manual
+        - helius
+        - moralis
+        - alchemy
+        - dexscreener
+        - mobula
+    AlertChain:
+      type: string
+      enum:
+        - solana
+        - base
+        - ethereum
+        - arbitrum
+        - bsc
+        - ton
+        - monad
+        - other
+    AlertTriggerKind:
+      type: string
+      enum:
+        - new_pair
+        - large_buy
+        - volume_spike
+        - holder_growth
+        - price_breakout
+        - manual
+    AlertRiskLevel:
+      type: string
+      enum:
+        - low
+        - medium
+        - high
+    AlertToken:
+      type: object
+      properties:
+        chain:
+          $ref: "#/components/schemas/AlertChain"
+        symbol:
+          type: string
+        address:
+          type: string
+        name:
+          type: string
+        pairAddress:
+          type: string
+        pairUrl:
+          type: string
+          format: uri
+        dex:
+          type: string
+      required:
+        - chain
+        - symbol
+    AlertMarket:
+      type: object
+      properties:
+        priceUsd:
+          type: number
+          minimum: 0
+        liquidityUsd:
+          type: number
+          minimum: 0
+        marketCapUsd:
+          type: number
+          minimum: 0
+        volume24hUsd:
+          type: number
+          minimum: 0
+        priceChange24hPct:
+          type: number
+        holderCount:
+          type: integer
+          minimum: 0
+        ageMinutes:
+          type: number
+          minimum: 0
+        txns24h:
+          type: integer
+          minimum: 0
+        buys24h:
+          type: integer
+          minimum: 0
+        sells24h:
+          type: integer
+          minimum: 0
+        buyPressurePct:
+          type: number
+          minimum: 0
+          maximum: 100
+    AlertTrigger:
+      type: object
+      properties:
+        kind:
+          $ref: "#/components/schemas/AlertTriggerKind"
+        amountUsd:
+          type: number
+          minimum: 0
+        txHash:
+          type: string
+        walletAddress:
+          type: string
+        description:
+          type: string
+      required:
+        - kind
+    AlertPreviewRequest:
+      type: object
+      properties:
+        source:
+          $ref: "#/components/schemas/AlertSource"
+        token:
+          $ref: "#/components/schemas/AlertToken"
+        market:
+          $ref: "#/components/schemas/AlertMarket"
+        trigger:
+          $ref: "#/components/schemas/AlertTrigger"
+        narrativeTags:
+          type: array
+          items:
+            type: string
+        riskFlags:
+          type: array
+          items:
+            type: string
+        observedAt:
+          type: string
+          format: date-time
+        dryRun:
+          type: boolean
+      required:
+        - token
+        - trigger
+    TelegramPublishResult:
+      type: object
+      properties:
+        published:
+          type: boolean
+        dryRun:
+          type: boolean
+        chatId:
+          type: string
+        messageId:
+          type: integer
+        reason:
+          type: string
+      required:
+        - published
+        - dryRun
+    AlertPreviewResponse:
+      type: object
+      properties:
+        alertId:
+          type: string
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        grade:
+          type: string
+          enum:
+            - A
+            - B
+            - C
+            - D
+        riskLevel:
+          $ref: "#/components/schemas/AlertRiskLevel"
+        reasons:
+          type: array
+          items:
+            type: string
+        riskFlags:
+          type: array
+          items:
+            type: string
+        message:
+          type: string
+        telegram:
+          $ref: "#/components/schemas/TelegramPublishResult"
+      required:
+        - alertId
+        - score
+        - grade
+        - riskLevel
+        - reasons
+        - riskFlags
+        - message
+        - telegram
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+        issues:
+          type: array
+          items:
+            type: object
+      required:
+        - error
+    MarketPeriodStats:
+      type: object
+      properties:
+        m5:
+          type: number
+        h1:
+          type: number
+        h6:
+          type: number
+        h24:
+          type: number
+    MarketTxnStats:
+      type: object
+      properties:
+        buys:
+          type: integer
+        sells:
+          type: integer
+      required:
+        - buys
+        - sells
+    MarketTokenLink:
+      type: object
+      properties:
+        type:
+          type: string
+        label:
+          type: string
+        url:
+          type: string
+          format: uri
+      required:
+        - url
+    MarketProviderSnapshot:
+      type: object
+      properties:
+        provider:
+          type: string
+          enum: [dexscreener, mobula, helius, moralis, alchemy]
+        status:
+          type: string
+          enum: [live, demo, missing_key, skipped, error]
+        label:
+          type: string
+        detail:
+          type: string
+        value:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - provider
+        - status
+        - label
+    MarketTokenSecurity:
+      type: object
+      properties:
+        holderCount:
+          type: number
+        top10HolderPct:
+          type: number
+        buyTax:
+          type: string
+        sellTax:
+          type: string
+        liquidityBurnPct:
+          type: number
+        mintAuthorityDisabled:
+          type: boolean
+        freezeAuthorityDisabled:
+          type: boolean
+        renounced:
+          type: boolean
+        verifiedContract:
+          type: boolean
+        possibleSpam:
+          type: boolean
+    MarketTokenTradePlatform:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        logo:
+          type: string
+          format: uri
+    MarketTokenTrade:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        operation:
+          type: string
+        baseTokenAmount:
+          type: number
+        baseTokenAmountUsd:
+          type: number
+        quoteTokenAmount:
+          type: number
+        quoteTokenAmountUsd:
+          type: number
+        timestamp:
+          type: integer
+        transactionHash:
+          type: string
+        marketAddress:
+          type: string
+        makerAddress:
+          type: string
+        senderAddress:
+          type: string
+        priceUsd:
+          type: number
+        marketCapUsd:
+          type: number
+        labels:
+          type: array
+          items:
+            type: string
+        platform:
+          $ref: "#/components/schemas/MarketTokenTradePlatform"
+      required:
+        - id
+        - type
+        - labels
+    MarketTokenHolderMetadata:
+      type: object
+      properties:
+        entityName:
+          type: string
+        entityLogo:
+          type: string
+          format: uri
+        entityType:
+          type: string
+        entityLabels:
+          type: array
+          items:
+            type: string
+        entityTwitter:
+          type: string
+          format: uri
+        entityWebsite:
+          type: string
+          format: uri
+        entityTelegram:
+          type: string
+          format: uri
+        entityGithub:
+          type: string
+          format: uri
+        entityDiscord:
+          type: string
+          format: uri
+      required:
+        - entityLabels
+    MarketTokenHolderPosition:
+      type: object
+      properties:
+        walletAddress:
+          type: string
+        tokenAmount:
+          type: number
+        tokenAmountUsd:
+          type: number
+        percentageOfTotalSupply:
+          type: number
+        realizedPnlUsd:
+          type: number
+        unrealizedPnlUsd:
+          type: number
+        totalPnlUsd:
+          type: number
+        buys:
+          type: integer
+        sells:
+          type: integer
+        avgBuyPriceUsd:
+          type: number
+        avgSellPriceUsd:
+          type: number
+        firstTradeAt:
+          type: integer
+        lastTradeAt:
+          type: integer
+        lastActivityAt:
+          type: integer
+        labels:
+          type: array
+          items:
+            type: string
+        walletMetadata:
+          $ref: "#/components/schemas/MarketTokenHolderMetadata"
+        platform:
+          $ref: "#/components/schemas/MarketTokenTradePlatform"
+      required:
+        - walletAddress
+        - labels
+    MarketToken:
+      type: object
+      properties:
+        id:
+          type: string
+        chainId:
+          type: string
+        chainLabel:
+          type: string
+        dexId:
+          type: string
+        url:
+          type: string
+          format: uri
+        pairAddress:
+          type: string
+        tokenAddress:
+          type: string
+        name:
+          type: string
+        symbol:
+          type: string
+        quoteSymbol:
+          type: string
+        priceUsd:
+          type: number
+        priceNative:
+          type: string
+        marketCap:
+          type: number
+        fdv:
+          type: number
+        liquidityUsd:
+          type: number
+        volume:
+          $ref: "#/components/schemas/MarketPeriodStats"
+        priceChange:
+          $ref: "#/components/schemas/MarketPeriodStats"
+        txns:
+          type: object
+          properties:
+            m5:
+              $ref: "#/components/schemas/MarketTxnStats"
+            h1:
+              $ref: "#/components/schemas/MarketTxnStats"
+            h6:
+              $ref: "#/components/schemas/MarketTxnStats"
+            h24:
+              $ref: "#/components/schemas/MarketTxnStats"
+          required:
+            - m5
+            - h1
+            - h6
+            - h24
+        pairCreatedAt:
+          type: integer
+        ageMinutes:
+          type: number
+        imageUrl:
+          type: string
+          format: uri
+        openGraph:
+          type: string
+          format: uri
+        description:
+          type: string
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketTokenLink"
+        boostAmount:
+          type: number
+        profileUpdatedAt:
+          type: string
+          format: date-time
+        narrativeTags:
+          type: array
+          items:
+            type: string
+        riskFlags:
+          type: array
+          items:
+            type: string
+        signalScore:
+          type: integer
+        providers:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketProviderSnapshot"
+        security:
+          $ref: "#/components/schemas/MarketTokenSecurity"
+      required:
+        - id
+        - chainId
+        - chainLabel
+        - dexId
+        - url
+        - pairAddress
+        - tokenAddress
+        - name
+        - symbol
+        - quoteSymbol
+        - volume
+        - priceChange
+        - txns
+        - links
+        - narrativeTags
+        - riskFlags
+        - signalScore
+        - providers
+    MarketListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketToken"
+        total:
+          type: integer
+          minimum: 0
+        limit:
+          type: integer
+          minimum: 1
+        aggregates:
+          type: object
+          properties:
+            marketCapUsd:
+              type: number
+            volume24hUsd:
+              type: number
+            txns24h:
+              type: integer
+              minimum: 0
+            pairCount:
+              type: integer
+              minimum: 0
+            tokenCount:
+              type: integer
+              minimum: 0
+          required:
+            - marketCapUsd
+            - volume24hUsd
+            - txns24h
+            - pairCount
+            - tokenCount
+        source:
+          type: string
+          enum: [aggregated]
+        updatedAt:
+          type: string
+          format: date-time
+        providers:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketProviderSnapshot"
+      required:
+        - data
+        - total
+        - limit
+        - aggregates
+        - source
+        - updatedAt
+        - providers
+    MarketSignal:
+      type: object
+      properties:
+        id:
+          type: string
+        token:
+          $ref: "#/components/schemas/MarketToken"
+        title:
+          type: string
+        sentiment:
+          type: string
+          enum: [Bullish, Bearish, Watch]
+        reason:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        score:
+          type: integer
+      required:
+        - id
+        - token
+        - title
+        - sentiment
+        - reason
+        - tags
+        - score
+    MarketSignalsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketSignal"
+        source:
+          type: string
+          enum: [aggregated]
+        updatedAt:
+          type: string
+          format: date-time
+        providers:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketProviderSnapshot"
+      required:
+        - data
+        - source
+        - updatedAt
+        - providers
+    MarketDetailResponse:
+      type: object
+      properties:
+        token:
+          $ref: "#/components/schemas/MarketToken"
+        pairs:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketToken"
+        trades:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketTokenTrade"
+        holders:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketTokenHolderPosition"
+        holdersTotal:
+          type: integer
+          minimum: 0
+        source:
+          type: string
+          enum: [aggregated]
+        updatedAt:
+          type: string
+          format: date-time
+        providers:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketProviderSnapshot"
+      required:
+        - token
+        - pairs
+        - trades
+        - holders
+        - source
+        - updatedAt
+        - providers

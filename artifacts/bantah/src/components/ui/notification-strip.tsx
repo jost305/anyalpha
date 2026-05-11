@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { X, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -71,6 +71,10 @@ interface NotificationStripStackProps {
 
 export function NotificationStripStack({ strips: initialStrips }: NotificationStripStackProps) {
   const [strips, setStrips] = useState(initialStrips);
+
+  useEffect(() => {
+    setStrips(initialStrips);
+  }, [initialStrips]);
 
   const dismiss = (id: string) => {
     setStrips((prev) => prev.filter((s) => s.id !== id));

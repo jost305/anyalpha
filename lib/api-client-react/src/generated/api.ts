@@ -5,18 +5,31 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
+  MutationFunction,
   QueryFunction,
   QueryKey,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
 } from "@tanstack/react-query";
 
-import type { HealthStatus } from "./api.schemas";
+import type {
+  AlertPreviewRequest,
+  AlertPreviewResponse,
+  ApiError,
+  HealthStatus,
+  ListMarketSignalsParams,
+  ListMarketsParams,
+  MarketDetailResponse,
+  MarketListResponse,
+  MarketSignalsResponse,
+} from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
-import type { ErrorType } from "../custom-fetch";
+import type { ErrorType, BodyType } from "../custom-fetch";
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -92,6 +105,388 @@ export function useHealthCheck<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getHealthCheckQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Scores an alert signal, formats the Telegram message, and optionally publishes it.
+ * @summary Preview or publish a scored alert
+ */
+export const getCreateAlertPreviewUrl = () => {
+  return `/api/alerts/preview`;
+};
+
+export const createAlertPreview = async (
+  alertPreviewRequest: AlertPreviewRequest,
+  options?: RequestInit,
+): Promise<AlertPreviewResponse> => {
+  return customFetch<AlertPreviewResponse>(getCreateAlertPreviewUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(alertPreviewRequest),
+  });
+};
+
+export const getCreateAlertPreviewMutationOptions = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createAlertPreview>>,
+    TError,
+    { data: BodyType<AlertPreviewRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createAlertPreview>>,
+  TError,
+  { data: BodyType<AlertPreviewRequest> },
+  TContext
+> => {
+  const mutationKey = ["createAlertPreview"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createAlertPreview>>,
+    { data: BodyType<AlertPreviewRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createAlertPreview(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateAlertPreviewMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createAlertPreview>>
+>;
+export type CreateAlertPreviewMutationBody = BodyType<AlertPreviewRequest>;
+export type CreateAlertPreviewMutationError = ErrorType<ApiError>;
+
+/**
+ * @summary Preview or publish a scored alert
+ */
+export const useCreateAlertPreview = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createAlertPreview>>,
+    TError,
+    { data: BodyType<AlertPreviewRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createAlertPreview>>,
+  TError,
+  { data: BodyType<AlertPreviewRequest> },
+  TContext
+> => {
+  return useMutation(getCreateAlertPreviewMutationOptions(options));
+};
+
+/**
+ * Returns normalized live token markets from DexScreener.
+ * @summary List live token markets
+ */
+export const getListMarketsUrl = (params?: ListMarketsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/markets?${stringifiedParams}`
+    : `/api/markets`;
+};
+
+export const listMarkets = async (
+  params?: ListMarketsParams,
+  options?: RequestInit,
+): Promise<MarketListResponse> => {
+  return customFetch<MarketListResponse>(getListMarketsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListMarketsQueryKey = (params?: ListMarketsParams) => {
+  return [`/api/markets`, ...(params ? [params] : [])] as const;
+};
+
+export const getListMarketsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listMarkets>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListMarketsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listMarkets>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListMarketsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listMarkets>>> = ({
+    signal,
+  }) => listMarkets(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listMarkets>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListMarketsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listMarkets>>
+>;
+export type ListMarketsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List live token markets
+ */
+
+export function useListMarkets<
+  TData = Awaited<ReturnType<typeof listMarkets>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListMarketsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listMarkets>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListMarketsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Returns market-derived signals ranked by AnyAlpha scoring.
+ * @summary List live market signals
+ */
+export const getListMarketSignalsUrl = (params?: ListMarketSignalsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/markets/signals?${stringifiedParams}`
+    : `/api/markets/signals`;
+};
+
+export const listMarketSignals = async (
+  params?: ListMarketSignalsParams,
+  options?: RequestInit,
+): Promise<MarketSignalsResponse> => {
+  return customFetch<MarketSignalsResponse>(getListMarketSignalsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListMarketSignalsQueryKey = (
+  params?: ListMarketSignalsParams,
+) => {
+  return [`/api/markets/signals`, ...(params ? [params] : [])] as const;
+};
+
+export const getListMarketSignalsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listMarketSignals>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListMarketSignalsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listMarketSignals>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListMarketSignalsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listMarketSignals>>
+  > = ({ signal }) => listMarketSignals(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listMarketSignals>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListMarketSignalsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listMarketSignals>>
+>;
+export type ListMarketSignalsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List live market signals
+ */
+
+export function useListMarketSignals<
+  TData = Awaited<ReturnType<typeof listMarketSignals>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListMarketSignalsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listMarketSignals>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListMarketSignalsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Returns normalized pair detail for a token across available pools.
+ * @summary Get token market detail
+ */
+export const getGetMarketTokenUrl = (chainId: string, tokenAddress: string) => {
+  return `/api/markets/token/${chainId}/${tokenAddress}`;
+};
+
+export const getMarketToken = async (
+  chainId: string,
+  tokenAddress: string,
+  options?: RequestInit,
+): Promise<MarketDetailResponse> => {
+  return customFetch<MarketDetailResponse>(
+    getGetMarketTokenUrl(chainId, tokenAddress),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetMarketTokenQueryKey = (
+  chainId: string,
+  tokenAddress: string,
+) => {
+  return [`/api/markets/token/${chainId}/${tokenAddress}`] as const;
+};
+
+export const getGetMarketTokenQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMarketToken>>,
+  TError = ErrorType<ApiError>,
+>(
+  chainId: string,
+  tokenAddress: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMarketToken>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetMarketTokenQueryKey(chainId, tokenAddress);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getMarketToken>>> = ({
+    signal,
+  }) => getMarketToken(chainId, tokenAddress, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!(chainId && tokenAddress),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMarketToken>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMarketTokenQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMarketToken>>
+>;
+export type GetMarketTokenQueryError = ErrorType<ApiError>;
+
+/**
+ * @summary Get token market detail
+ */
+
+export function useGetMarketToken<
+  TData = Awaited<ReturnType<typeof getMarketToken>>,
+  TError = ErrorType<ApiError>,
+>(
+  chainId: string,
+  tokenAddress: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMarketToken>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMarketTokenQueryOptions(
+    chainId,
+    tokenAddress,
+    options,
+  );
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

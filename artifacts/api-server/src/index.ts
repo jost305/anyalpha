@@ -1,4 +1,7 @@
+import "./lib/load-env";
 import app from "./app";
+import { startMarketAlertWorker } from "./lib/alerts/market-watcher";
+import { startMobulaGlobalAggregateWorker } from "./lib/markets/mobula-global";
 import { logger } from "./lib/logger";
 
 const rawPort = process.env["PORT"];
@@ -22,4 +25,6 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
+  startMarketAlertWorker();
+  startMobulaGlobalAggregateWorker();
 });
