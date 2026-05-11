@@ -187,7 +187,11 @@ export interface FetchMarketsOptions {
 }
 
 async function apiFetch<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const response = await fetch(`/api${path}`, {
+  const rawBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+  const baseUrl = rawBaseUrl ? rawBaseUrl.replace(/\/+$/, '') : '';
+  const requestUrl = baseUrl ? `${baseUrl}/api${path}` : `/api${path}`;
+
+  const response = await fetch(requestUrl, {
     headers: { accept: 'application/json' },
     signal,
   });
