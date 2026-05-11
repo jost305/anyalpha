@@ -137,7 +137,7 @@ export default function ProfilePage() {
           {/* Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="font-black text-lg text-foreground">BantahBro</h2>
+              <h2 className="font-black text-lg text-foreground">AlphaTrader</h2>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-bold border border-primary/30">
                 🔥 Veteran
               </span>
@@ -403,7 +403,7 @@ export default function ProfilePage() {
               </div>
               <div className="divide-y divide-border/40">
                 {[
-                  { label: 'Display Name', value: 'BantahBro' },
+                  { label: 'Display Name', value: 'AlphaTrader' },
                   { label: 'Connected Wallet', value: '0xD1f4...7A3C' },
                   { label: 'Network', value: 'Solana Mainnet' },
                 ].map(row => (
@@ -484,7 +484,7 @@ export default function ProfilePage() {
               <div className="px-4 py-3 flex items-center justify-between">
                 <div>
                   <div className="text-xs font-medium text-foreground">Disconnect Wallet</div>
-                  <div className="text-[10px] text-muted-foreground">Remove wallet connection from Terminal6</div>
+                  <div className="text-[10px] text-muted-foreground">Remove wallet connection from anyAlpha</div>
                 </div>
                 <button className="text-xs px-3 py-1.5 border border-destructive/50 text-destructive rounded hover:bg-destructive/10 transition">
                   Disconnect

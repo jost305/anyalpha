@@ -13,7 +13,7 @@ type AdminTab = 'overview' | 'users' | 'coins' | 'rewards' | 'runners' | 'listin
 /* ─────────────────────────── mock data ─────────────────────── */
 
 const USERS = [
-  { id: 1,  emoji: '🎯', name: 'BantahBro',    wallet: '0xD1f4...7A3C', points: 4_820, rank: 6,  battles: 6,  status: 'active',  joined: '3mo ago',  volume: '$48.7K' },
+  { id: 1,  emoji: '🎯', name: 'AlphaTrader',  wallet: '0xD1f4...7A3C', points: 4_820, rank: 6,  battles: 6,  status: 'active',  joined: '3mo ago',  volume: '$48.7K' },
   { id: 2,  emoji: '👑', name: 'CryptoWhale',  wallet: '0xF1a2...9B4C', points: 9_100, rank: 1,  battles: 47, status: 'active',  joined: '8mo ago',  volume: '$4.2M'  },
   { id: 3,  emoji: '🤖', name: 'BullBot v3',   wallet: '0xA9e1...3D7F', points: 7_840, rank: 2,  battles: 92, status: 'active',  joined: '5mo ago',  volume: '$2.8M'  },
   { id: 4,  emoji: '🐳', name: 'DeepDiver',    wallet: '0xC4b3...8E2A', points: 6_210, rank: 3,  battles: 31, status: 'active',  joined: '6mo ago',  volume: '$3.1M'  },
@@ -57,7 +57,7 @@ const RUNNERS = [
 
 const REWARD_HISTORY = [
   { user: 'CryptoWhale', emoji: '👑', points: 500,  reason: 'Top trader bonus',    time: '1h ago'  },
-  { user: 'BantahBro',   emoji: '🎯', points: 200,  reason: 'Beta feedback',       time: '3h ago'  },
+  { user: 'AlphaTrader', emoji: '🎯', points: 200,  reason: 'Beta feedback',       time: '3h ago'  },
   { user: 'BullBot v3',  emoji: '🤖', points: 1000, reason: 'AI battle milestone', time: '1d ago'  },
   { user: 'DeepDiver',   emoji: '🐳', points: 350,  reason: 'Referral bonus',      time: '2d ago'  },
   { user: 'SharkMode',   emoji: '🦈', points: 250,  reason: 'Community event',     time: '3d ago'  },
@@ -65,7 +65,7 @@ const REWARD_HISTORY = [
 
 const ACTIVITY_FEED = [
   { icon: '👤', msg: 'New user registered: WaveRider',                      time: '2m ago',  color: 'text-blue-400'   },
-  { icon: '🏆', msg: 'Battle completed: BantahBro vs SharkMode',            time: '4m ago',  color: 'text-yellow-400' },
+  { icon: '🏆', msg: 'Battle completed: AlphaTrader vs SharkMode',          time: '4m ago',  color: 'text-yellow-400' },
   { icon: '📋', msg: 'New listing submitted: UNICORN (user)',                time: '12m ago', color: 'text-purple-400' },
   { icon: '📡', msg: 'API fetch: OKTO trending on Uniswap',                 time: '34m ago', color: 'text-cyan-400'   },
   { icon: '⚠️', msg: 'DiceBot flagged for suspicious volume pattern',       time: '45m ago', color: 'text-orange-400' },
@@ -618,7 +618,7 @@ export default function AdminPage() {
         </div>
         <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
           <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block animate-pulse" /> Live</span>
-          <span>Terminal6 v0.9.0</span>
+          <span>anyAlpha v0.9.0</span>
         </div>
       </div>
 

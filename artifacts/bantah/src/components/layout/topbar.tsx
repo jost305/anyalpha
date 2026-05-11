@@ -2,7 +2,7 @@ import { Search, Bell, Crown, Menu, Wallet, X } from 'lucide-react';
 import { useTheme } from '@/lib/theme-provider';
 import { useState, useRef, useEffect } from 'react';
 import MobileDrawer from './mobile-drawer';
-import { ConnectWalletModal } from '@/components/modals/connect-wallet-modal';
+import SignInModal from '@/components/modals/signin-modal';
 import { searchTokens, fmtSearchPrice, type SearchToken } from '@/lib/market-data';
 
 const hotMarkets = [
@@ -65,12 +65,10 @@ export default function TopBar({ onBellClick, onSelectToken, unreadCount = 0 }: 
 
   return (
     <>
-      <ConnectWalletModal
+      <SignInModal
         open={walletModalOpen}
-        onOpenChange={(o) => {
-          setWalletModalOpen(o);
-          if (!o && !connected) setConnected(true);
-        }}
+        onOpenChange={setWalletModalOpen}
+        onSuccess={() => setConnected(true)}
       />
       <MobileDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
 

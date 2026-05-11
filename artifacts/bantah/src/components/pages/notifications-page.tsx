@@ -30,7 +30,7 @@ const SEED: Notification[] = [
   { id: uid(), type: 'signal', title: 'Strong BUY signal — BANTAH', body: 'Volume spike +340% detected on BANTAH/SOL.',                  time: '9m ago',  read: false, token: 'BANTAH'   },
   { id: uid(), type: 'tx',    title: 'Swap confirmed',            body: '0.5 SOL → 12,400 PEPEFUN · tx 7Kea...mp9B',                   time: '12m ago', read: true   },
   { id: uid(), type: 'price', title: 'DOGS approaching target',   body: 'DOGS/TON is 2.1% from your $0.000085 alert.',                 time: '18m ago', read: true,  token: 'DOGS'     },
-  { id: uid(), type: 'system', title: 'Welcome to Terminal6',     body: 'Your account is set up. Explore markets and set price alerts.', time: '1h ago',  read: true   },
+  { id: uid(), type: 'system', title: 'Welcome to anyAlpha',      body: 'Your account is set up. Explore markets and set price alerts.', time: '1h ago',  read: true   },
   { id: uid(), type: 'battle', title: 'BullBot won the battle',   body: 'BullBot vs T6Agent — BullBot wins with +18.4% return.',        time: '2h ago',  read: true   },
   { id: uid(), type: 'signal', title: 'Bearish divergence — ETH', body: 'RSI divergence detected on AIGEN/ETH 4h chart.',              time: '3h ago',  read: true,  token: 'AIGEN'    },
   { id: uid(), type: 'tx',    title: 'Stake confirmed',           body: '200 BXBT staked to battle pool. Expected resolution: 24h.',   time: '5h ago',  read: true   },
