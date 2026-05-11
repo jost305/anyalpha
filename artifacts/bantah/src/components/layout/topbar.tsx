@@ -184,19 +184,31 @@ export default function TopBar({ onBellClick, onSelectToken, unreadCount = 0 }: 
           </div>
         </div>
 
-        <div className="hidden sm:flex items-center gap-2 px-2 py-1 overflow-x-auto border-t border-border bg-background/50 shrink-0">
-          {hotMarkets.map((market) => (
-            <button
-              key={market.name}
-              onClick={() => onSelectToken?.(market.name)}
-              className="flex items-center gap-1.5 bg-input px-2 py-1 rounded text-xs hover:bg-sidebar-accent transition whitespace-nowrap"
-            >
-              <span>{market.emoji}</span>
-              <span className="font-bold">{market.name}</span>
-              <span className={market.positive ? 'text-green-400' : 'text-red-400'}>{market.change}</span>
-            </button>
-          ))}
-          <button className="text-xs text-primary hover:underline px-2 whitespace-nowrap">View all →</button>
+        <div className="hidden sm:flex items-center border-t border-border bg-background/50 shrink-0 overflow-hidden relative">
+          {/* Fade edges */}
+          <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 z-10 bg-gradient-to-r from-background/80 to-transparent" />
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-l from-background/80 to-transparent" />
+
+          {/* Scrolling ticker — items doubled for seamless loop */}
+          <div className="ticker-track py-1 gap-2">
+            {[...hotMarkets, ...hotMarkets].map((market, i) => (
+              <button
+                key={`${market.name}-${i}`}
+                onClick={() => onSelectToken?.(market.name)}
+                className="ticker-pill flex items-center gap-1.5 bg-input px-2 py-1 rounded text-xs hover:bg-sidebar-accent transition whitespace-nowrap mx-1"
+                style={{ animationDelay: `${(i % hotMarkets.length) * 0.6}s` }}
+              >
+                <span>{market.emoji}</span>
+                <span className="font-bold">{market.name}</span>
+                <span className={market.positive ? 'text-green-400' : 'text-red-400'}>{market.change}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Pinned "View all" */}
+          <button className="absolute right-2 z-20 text-xs text-primary hover:underline whitespace-nowrap font-semibold bg-background/80 pl-1">
+            View all →
+          </button>
         </div>
       </div>
     </>
