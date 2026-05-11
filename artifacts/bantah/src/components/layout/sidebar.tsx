@@ -1,4 +1,4 @@
-import { BarChart3, Trophy, Bell, Wallet, Settings, MessageSquare, Megaphone, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BarChart3, Trophy, Bell, Wallet, Settings, MessageSquare, Megaphone, ChevronLeft, ChevronRight, Shield } from 'lucide-react';
 import { useState } from 'react';
 
 const menuItems = [
@@ -9,6 +9,10 @@ const menuItems = [
   { icon: Wallet,        label: 'Portfolio'    },
   { icon: Settings,      label: 'Profile'      },
   { icon: Megaphone,     label: 'Advertise'    },
+];
+
+const adminItems = [
+  { icon: Shield, label: 'Admin' },
 ];
 
 const trendingTopics = [
@@ -96,6 +100,26 @@ export default function Sidebar({ onMenuClick, unreadCount = 0 }: SidebarProps) 
                   </span>
                 )
               )}
+            </button>
+          ))}
+        </div>
+
+        {/* Admin section */}
+        <div className="py-1 border-t border-border">
+          {!collapsed && (
+            <div className="text-xs font-bold text-muted-foreground px-3 py-1 mt-1 uppercase tracking-wider">Admin</div>
+          )}
+          {adminItems.map((item) => (
+            <button
+              key={item.label}
+              onClick={() => onMenuClick?.(item.label)}
+              title={collapsed ? item.label : undefined}
+              className={`w-full text-left text-sm py-1.5 hover:bg-sidebar-accent hover:text-accent-foreground transition flex items-center gap-2 text-primary/80 hover:text-primary relative ${
+                collapsed ? 'justify-center px-0' : 'px-3'
+              }`}
+            >
+              <item.icon size={16} className="shrink-0" />
+              {!collapsed && <span className="flex-1 truncate font-semibold">{item.label}</span>}
             </button>
           ))}
         </div>
