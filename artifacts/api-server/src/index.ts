@@ -6,6 +6,7 @@ import { logger } from "./lib/logger";
 import { startTelegramWebhook } from "./lib/telegram/startup";
 import { startXFilteredStreamWorker } from "./lib/twitter-track/stream";
 import { startPublicWalletDiscoveryWorker } from "./lib/wallet-tracker/discovery-worker";
+import { startLaunchpadIndexer } from "./lib/launchpad/indexer-worker";
 
 const rawPort = process.env["PORT"];
 
@@ -33,4 +34,5 @@ app.listen(port, (err) => {
   startMobulaGlobalAggregateWorker();
   startXFilteredStreamWorker();
   startPublicWalletDiscoveryWorker();
+  startLaunchpadIndexer();
 });

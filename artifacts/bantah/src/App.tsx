@@ -5,6 +5,9 @@ import { setAuthTokenGetter } from '@workspace/api-client-react';
 import { AnimatePresence, MotionConfig, motion, useReducedMotion } from 'framer-motion';
 import Pusher from 'pusher-js';
 import { toast } from 'sonner';
+import { WagmiProvider } from '@privy-io/wagmi';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { wagmiConfig, robinhoodChain, robinhoodChainTestnet } from '@/lib/wagmi';
 import { ThemeProvider, useTheme } from '@/lib/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 import Sidebar from '@/components/layout/sidebar';
@@ -485,7 +488,7 @@ function Terminal() {
       case 'launcher':
         return <LauncherPage onSelectToken={(id) => { setSelectedLauncherToken(id); setNonTokenPage('launcher-trade'); }} />;
       case 'launcher-trade':
-        return <LauncherTradePage onBack={() => setNonTokenPage('launcher')} />;
+        return <LauncherTradePage tokenAddress={selectedLauncherToken} onBack={() => setNonTokenPage('launcher')} />;
       case 'watcher':
         return <WatcherPage />;
       case 'twitter-track':
@@ -795,6 +798,8 @@ function AuthConfiguredApp() {
     <PrivyProvider
       appId={privyAppId}
       config={{
+        defaultChain: robinhoodChainTestnet,
+        supportedChains: [robinhoodChainTestnet, robinhoodChain],
         appearance: {
           theme: theme === 'dark' ? 'dark' : 'light',
           accentColor: '#f52e2b',
@@ -831,11 +836,17 @@ function AuthConfiguredApp() {
         },
       }}
     >
-      <PrivyTokenBridge />
-      <Terminal />
+      <QueryClientProvider client={queryClient}>
+        <WagmiProvider config={wagmiConfig}>
+          <PrivyTokenBridge />
+          <Terminal />
+        </WagmiProvider>
+      </QueryClientProvider>
     </PrivyProvider>
   );
 }
+
+const queryClient = new QueryClient();
 
 export default function App() {
   return (

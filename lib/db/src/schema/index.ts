@@ -780,3 +780,48 @@ export type XPostRow = typeof xPostsTable.$inferSelect;
 export type XTokenMentionRow = typeof xTokenMentionsTable.$inferSelect;
 export type XSocialAlertRow = typeof xSocialAlertsTable.$inferSelect;
 export type XWebhookEventRow = typeof xWebhookEventsTable.$inferSelect;
+
+export const launchpadTokensTable = pgTable(
+  "launchpad_tokens",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    chainId: integer("chain_id").notNull(),
+    tokenAddress: text("token_address").notNull(),
+    name: text("name").notNull(),
+    symbol: text("symbol").notNull(),
+    metadataUri: text("metadata_uri"),
+    devAddress: text("dev_address").notNull(),
+    marketCapRaw: numeric("market_cap_raw", { precision: 48, scale: 18 }).default("0"),
+    replyCount: integer("reply_count").notNull().default(0),
+    graduated: boolean("graduated").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("launchpad_tokens_chain_address_idx").on(table.chainId, table.tokenAddress),
+    index("launchpad_tokens_market_cap_idx").on(table.marketCapRaw),
+    index("launchpad_tokens_created_idx").on(table.createdAt),
+  ]
+);
+
+export const launchpadTradesTable = pgTable(
+  "launchpad_trades",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    tokenAddress: text("token_address").notNull(),
+    userAddress: text("user_address").notNull(),
+    isBuy: boolean("is_buy").notNull(),
+    ethAmountRaw: text("eth_amount_raw").notNull(),
+    tokenAmountRaw: text("token_amount_raw").notNull(),
+    txHash: text("tx_hash").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("launchpad_trades_token_idx").on(table.tokenAddress),
+    index("launchpad_trades_created_idx").on(table.createdAt),
+  ]
+);
+
+export type LaunchpadTokenRow = typeof launchpadTokensTable.$inferSelect;
+export type LaunchpadTradeRow = typeof launchpadTradesTable.$inferSelect;
+

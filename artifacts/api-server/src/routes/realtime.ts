@@ -32,6 +32,19 @@ router.get("/realtime/config", async (req, res, next) => {
   }
 });
 
+router.get("/realtime/public-config", async (req, res, next) => {
+  try {
+    const config = realtimePublicConfig();
+    res.setHeader("Cache-Control", "no-store");
+    res.json({
+      source: "realtime-public",
+      ...config,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post("/realtime/pusher/auth", async (req, res, next) => {
   try {
     const auth = await requireAuthenticatedUser(req.headers.authorization);

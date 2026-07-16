@@ -423,6 +423,13 @@ export default function ProfilePage() {
               <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
                 Privy User
               </span>
+              <button
+                onClick={() => void logout()}
+                className="ml-auto flex items-center gap-1.5 rounded-xl bg-destructive/10 px-3 py-1.5 text-xs font-bold text-destructive transition hover:bg-destructive/20"
+              >
+                <LogOut size={13} />
+                Sign Out
+              </button>
             </div>
 
             <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
@@ -436,29 +443,8 @@ export default function ProfilePage() {
                   <CopyButton text={primaryWallet} />
                 </span>
               ) : null}
-            </div>
-
-            <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-muted-foreground">
-              <span className="rounded-full border border-border bg-background/60 px-2 py-1">
-                Joined {formatPrivyDate(user.createdAt)}
-              </span>
-              <span className="rounded-full border border-border bg-background/60 px-2 py-1">
-                {user.linkedAccounts.length} linked account{user.linkedAccounts.length === 1 ? '' : 's'}
-              </span>
-              <span className="rounded-full border border-border bg-background/60 px-2 py-1">
-                {wallets.length} connected wallet{wallets.length === 1 ? '' : 's'}
-              </span>
-              <span className="rounded-full border border-border bg-background/60 px-2 py-1">
-                MFA {user.mfaMethods.length > 0 ? user.mfaMethods.join(', ') : 'off'}
-              </span>
-              <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-1 font-semibold text-foreground">
-                {alphaPointsBalance ??
-                  (serverLoading
-                    ? 'Alpha Points syncing...'
-                    : serverError
-                      ? 'Alpha Points unavailable'
-                      : 'Alpha Points pending')}
-              </span>
+              {((userHandle || primaryContact || primaryWallet) && <span>|</span>)}
+              <span>Joined {formatPrivyDate(user.createdAt)}</span>
             </div>
           </div>
 
@@ -507,7 +493,7 @@ export default function ProfilePage() {
                 icon: <BadgeCheck size={12} />,
               },
             ].map((item) => (
-              <div key={item.label} className="rounded-2xl border border-border bg-card/90 px-3 py-3">
+              <div key={item.label} className="relative overflow-hidden rounded-2xl border border-border/50 bg-background/40 px-3 py-3 backdrop-blur-xl shadow-sm transition hover:bg-background/60 hover:shadow-md">
                 <div className="flex items-center gap-1 text-primary">{item.icon}</div>
                 <div className="mt-2 text-sm font-black text-foreground">{item.value}</div>
                 <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{item.label}</div>

@@ -164,7 +164,14 @@ export default function TopBar({
             </button>
           </div>
 
-          <div className="flex min-w-0 flex-1 items-center gap-1 md:hidden">
+          <div className="flex min-w-0 flex-1 items-center gap-1.5 md:hidden">
+            <button
+              onClick={() => window.dispatchEvent(new Event('open-create-token'))}
+              className="flex items-center justify-center gap-1 h-8 flex-1 rounded-xl bg-yellow-500 px-2 shadow-[0_0_10px_rgba(234,179,8,0.2)] text-black hover:bg-yellow-400 transition-colors shrink-0"
+            >
+              <span className="text-sm animate-pulse">🚀</span>
+              <span className="text-[10px] font-black uppercase tracking-wider whitespace-nowrap">Create</span>
+            </button>
             <div
               className={`alpha-points-badge flex h-8 min-w-0 flex-[1.15] items-center justify-center gap-1 rounded-xl bg-primary/10 px-1.5 text-[10px] text-foreground ${
                 rewardsPulse ? 'is-changing' : ''
@@ -253,19 +260,12 @@ export default function TopBar({
             </button>
 
             {ready && authenticated ? (
-              <div className="surface-sheen hidden items-center gap-2 rounded-xl border border-success/20 bg-success/10 px-2.5 py-1.5 md:flex">
-                {avatarUrl ? (
-                  <img src={avatarUrl} alt={displayName ?? 'AnyAlpha user'} className="h-6 w-6 rounded-lg border border-success/25 object-cover" />
-                ) : (
-                  <span className="h-2 w-2 rounded-full bg-success" />
-                )}
-                <div className="leading-tight">
-                  <div className="max-w-[140px] truncate text-[11px] font-bold text-foreground">{displayName}</div>
-                  <div className="max-w-[160px] truncate text-[10px] text-muted-foreground">
-                    {identitySubtitle}
-                  </div>
-                </div>
-              </div>
+              <button
+                onClick={handleProfileClick}
+                className="tap-feedback soft-glow hidden items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition hover:opacity-90 md:flex"
+              >
+                DASHBOARD
+              </button>
             ) : (
               <button
                 onClick={() => void login()}
