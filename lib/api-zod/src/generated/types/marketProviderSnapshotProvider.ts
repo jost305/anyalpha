@@ -15,4 +15,5 @@ export const MarketProviderSnapshotProvider = {
   helius: "helius",
   moralis: "moralis",
   alchemy: "alchemy",
+  bitquery: "bitquery",
 } as const;

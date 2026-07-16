@@ -11,7 +11,7 @@ interface ChipProps {
 
 const colorStyles = {
   default: 'bg-muted border-border text-muted-foreground hover:border-foreground/30',
-  green: 'bg-secondary/10 border-secondary/30 text-secondary hover:bg-secondary/20',
+  green: 'bg-success/10 border-success/30 text-success hover:bg-success/20',
   purple: 'bg-primary/10 border-primary/30 text-primary hover:bg-primary/20',
   orange: 'bg-orange-500/10 border-orange-500/30 text-orange-400 hover:bg-orange-500/20',
   blue: 'bg-blue-500/10 border-blue-500/30 text-blue-400 hover:bg-blue-500/20',
@@ -59,8 +59,8 @@ interface LiveBadgeProps {
 
 export function LiveBadge({ className }: LiveBadgeProps) {
   return (
-    <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold bg-secondary/10 border border-secondary/30 text-secondary rounded animate-pulse', className)}>
-      <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
+    <span className={cn('inline-flex items-center gap-1 rounded border border-success/30 bg-success/10 px-2 py-0.5 text-xs font-bold text-success animate-pulse', className)}>
+      <span className="w-1.5 h-1.5 rounded-full bg-success" />
       LIVE
     </span>
   );
@@ -76,7 +76,7 @@ export function NewBadge() {
 
 export function VerifiedBadge() {
   return (
-    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-xs font-bold bg-secondary/10 border border-secondary/30 text-secondary rounded">
+    <span className="inline-flex items-center gap-0.5 rounded border border-success/30 bg-success/10 px-1.5 py-0.5 text-xs font-bold text-success">
       ✓ Verified
     </span>
   );

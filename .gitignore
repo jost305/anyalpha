@@ -48,9 +48,12 @@ Thumbs.db
 .cache/
 .local/
 .railway/
+.vercel/
 
 # Local environment secrets
 .env
 .env.local
 .env.*
 !.env.example
+
+.vercel

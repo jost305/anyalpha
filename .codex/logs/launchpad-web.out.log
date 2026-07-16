@@ -1,0 +1,55 @@
+
+> @workspace/bantah@0.0.0 dev C:\Users\olusegun\Downloads\anyalpha-terminal\anyalpha-terminal\artifacts\bantah
+> vite --config vite.config.ts --host 0.0.0.0
+
+
+  [32m[1mVITE[22m v7.3.2[39m  [2mready in [0m[1m3446[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4173[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://169.254.92.18:[1m4173[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://169.254.113.18:[1m4173[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.1.2:[1m4173[22m/[39m
+[2m4:01:10 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/launchpad-page.tsx[22m
+[2m4:09:16 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/launchpad-page.tsx[22m
+[2m4:09:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/launchpad-page.tsx[22m
+[2m4:17:29 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/launchpad-page.tsx[22m
+[2m4:47:08 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/launchpad-page.tsx, /src/components/layout/topbar.tsx, /src/components/layout/main-content.tsx, /src/components/pages/token-page.tsx, /src/components/pages/watchlist-page.tsx, /src/components/pages/notifications-page.tsx, /src/components/sections/markets-table.tsx, /src/components/search/market-search.tsx, /src/components/pages/token-page-mobile.tsx[22m
+[2m4:47:08 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/launchpad-page.tsx, /src/components/layout/topbar.tsx, /src/components/layout/main-content.tsx, /src/components/pages/token-page.tsx, /src/components/pages/watchlist-page.tsx, /src/components/pages/notifications-page.tsx, /src/components/sections/markets-table.tsx, /src/components/search/market-search.tsx, /src/components/pages/token-page-mobile.tsx[22m
+[2m5:00:06 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/token-page-mobile.tsx[22m
+[2m5:00:06 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/token-page-mobile.tsx[22m
+[2m5:00:17 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/token-page-mobile.tsx[22m
+[2m5:00:36 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/token-page.tsx[22m
+[2m5:03:03 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/token-page.tsx[22m
+[2m5:03:14 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/token-page.tsx[22m
+[2m5:04:32 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/token-page.tsx[22m
+[2m5:04:54 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/token-page.tsx[22m
+[2m5:05:06 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/token-page.tsx[22m
+[2m5:05:30 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/token-page-mobile.tsx[22m
+[2m5:05:41 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/token-page-mobile.tsx[22m
+[2m5:27:07 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/App.tsx[22m
+[2m5:27:20 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/layout/sidebar.tsx[22m
+[2m5:27:33 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/layout/mobile-bottom-nav.tsx[22m
+[2m5:28:05 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/watcher-page.tsx[22m
+[2m5:55:13 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/layout/topbar.tsx[22m
+[2m5:55:13 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/layout/topbar.tsx[22m
+[2m5:56:54 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/App.tsx[22m
+[2m5:57:29 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/layout/topbar.tsx[22m
+[2m6:01:16 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/watcher-page.tsx[22m
+[2m6:01:33 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/watcher-page.tsx[22m
+[2m6:03:24 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/layout/sidebar.tsx[22m
+[2m6:04:59 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/watcher-page.tsx[22m
+[2m6:08:57 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/profile-page.tsx[22m
+[2m6:12:22 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/launchpad-page.tsx[22m
+[2m6:27:07 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/search/market-search.tsx[22m
+[2m6:28:16 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/search/market-search.tsx[22m
+[2m6:30:29 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/search/market-search.tsx[22m
+[2m7:53:41 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/App.tsx[22m
+[2m7:53:42 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/App.tsx[22m
+[2m7:53:47 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/layout/sidebar.tsx[22m
+[2m8:14:18 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/docs-page.tsx[22m
+[2m8:14:19 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/docs-page.tsx[22m
+[2m8:23:58 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/docs-page.tsx[22m
+[2m8:23:59 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/docs-page.tsx[22m
+[2m8:30:49 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/docs-page.tsx[22m
+[2m8:30:49 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/docs-page.tsx[22m
+[2m8:32:43 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/docs-page.tsx[22m

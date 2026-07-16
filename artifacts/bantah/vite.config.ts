@@ -18,6 +18,7 @@ const basePath = !rawBasePath
 
 export default defineConfig({
   base: basePath,
+  envDir: path.resolve(import.meta.dirname, "..", ".."),
   plugins: [
     react(),
     tailwindcss(),
@@ -40,6 +41,7 @@ export default defineConfig({
     alias: {
       "@": path.resolve(import.meta.dirname, "src"),
       "@assets": path.resolve(import.meta.dirname, "..", "..", "attached_assets"),
+      buffer: "buffer/",
     },
     dedupe: ["react", "react-dom"],
   },

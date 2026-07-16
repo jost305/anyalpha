@@ -30,7 +30,7 @@ const generateChartData = () => {
 
 export default function TradingChart({ token, onOpenPriceAlert, onOpenWatchlist }: ChartProps) {
   const [chartData, setChartData] = useState(generateChartData());
-  const [timeframe, setTimeframe] = useState('1h');
+  const [timeframe, setTimeframe] = useState('1m');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export default function TradingChart({ token, onOpenPriceAlert, onOpenWatchlist 
     return <ChartSkeleton />;
   }
 
-  const timeframes = ['1m', '5m', '15m', '1h', '4h', '1D'];
+  const timeframes = ['5s', '10s', '1m', '5m', '15m', '1h', '4h', '1D'];
   const price = chartData[chartData.length - 1]?.price || 0;
   const prevPrice = chartData[0]?.price || 0;
   const change = ((price - prevPrice) / prevPrice) * 100;
@@ -63,7 +63,7 @@ export default function TradingChart({ token, onOpenPriceAlert, onOpenWatchlist 
           <div className="flex items-center gap-2">
             <span className="text-base font-mono font-bold text-foreground">${price.toFixed(8)}</span>
             <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${
-              change >= 0 ? 'text-secondary bg-secondary/10' : 'text-destructive bg-destructive/10'
+              change >= 0 ? 'text-success bg-success/10' : 'text-destructive bg-destructive/10'
             }`}>
               {change >= 0 ? '▲' : '▼'} {Math.abs(change).toFixed(2)}%
             </span>
@@ -139,7 +139,7 @@ export default function TradingChart({ token, onOpenPriceAlert, onOpenWatchlist 
               <YAxis tick={{ fontSize: 10, fill: '#6b7280' }} stroke="#2a2f45" width={50} />
               <Tooltip
                 contentStyle={{ backgroundColor: '#0a0e27', border: '1px solid #a855f7', borderRadius: '4px', fontSize: '11px', padding: '6px' }}
-                labelStyle={{ color: '#fff', fontSize: '10px' }}
+                labelStyle={{ color: 'var(--foreground)', fontSize: '10px' }}
                 formatter={(value: number) => [`$${value.toFixed(8)}`, 'Price']}
               />
               <Area type="monotone" dataKey="price" stroke="#22c55e" strokeWidth={1.5} fill="url(#colorPrice)" />

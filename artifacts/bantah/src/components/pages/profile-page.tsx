@@ -1,498 +1,1048 @@
-import { useState } from 'react';
-import { Copy, Check, TrendingUp, TrendingDown, Wallet, Swords, ShieldCheck, Bell, Moon, Sun, ChevronRight, ExternalLink, Settings } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { usePrivy, useWallets, type LinkedAccountWithMetadata } from '@privy-io/react-auth';
+import {
+  ArrowUpRight,
+  BadgeCheck,
+  Bell,
+  Check,
+  Copy,
+  ExternalLink,
+  KeyRound,
+  Link2,
+  LoaderCircle,
+  LogOut,
+  RefreshCw,
+  ShieldCheck,
+  Sparkles,
+  Wallet,
+} from 'lucide-react';
+import {
+  type AuthVerificationResponse,
+  type ResolvedProfileField,
+  formatPrivyDate,
+  formatPrivyDateTime,
+  getAccountLabel,
+  getAccountMeta,
+  getAccountValue,
+  getConnectedWalletLabel,
+  getInitials,
+  getLinkedWalletAccounts,
+  getNonWalletAccounts,
+  getPrimaryContactField,
+  getPrimaryWalletAddress,
+  getUserAvatarUrl,
+  getUserDisplayField,
+  getUserHandleField,
+  shortenAddress,
+} from '@/lib/privy-profile';
 
-type ProfileTab = 'portfolio' | 'activity' | 'battles' | 'settings';
+type ProfileTab = 'identity' | 'accounts' | 'wallets' | 'security';
 
-interface Holding {
-  emoji: string;
-  name: string;
-  pair: string;
-  chain: string;
-  chainColor: string;
-  amount: string;
-  value: string;
-  pnl: string;
-  pnlPct: number;
-  allocation: number;
+function normalizeValue(value: string | null | undefined): string {
+  return value?.trim().toLowerCase() ?? '';
 }
 
-interface TxRow {
-  type: 'buy' | 'sell' | 'stake' | 'unstake';
-  token: string;
-  amount: string;
-  value: string;
-  time: string;
-  txHash: string;
-  status: 'confirmed' | 'pending';
+function normalizeDateValue(value: Date | string | number | null | undefined): string {
+  if (!value) return '';
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : date.toISOString();
 }
 
-interface Battle {
-  opponent: string;
-  result: 'win' | 'loss' | 'draw';
-  stake: string;
-  pnl: string;
-  time: string;
-  token: string;
+function formatPresence(value: boolean): string {
+  return value ? 'Yes' : 'No';
 }
 
-const HOLDINGS: Holding[] = [
-  { emoji: '🐸', name: 'PEPEFUN',  pair: 'PEPE/SOL',   chain: 'SOL',  chainColor: '#9945FF', amount: '1,248,000', value: '$15,481', pnl: '+$4,210', pnlPct: 37.4,  allocation: 32 },
-  { emoji: '⚡', name: 'BOLTAI',   pair: 'BOLTAI/SOL', chain: 'SOL',  chainColor: '#9945FF', amount: '84,200',    value: '$9,840',  pnl: '+$2,114', pnlPct: 27.4,  allocation: 20 },
-  { emoji: '🎯', name: 'BANTAH',   pair: 'BANTAH/SOL', chain: 'SOL',  chainColor: '#9945FF', amount: '42,100',    value: '$7,212',  pnl: '-$841',   pnlPct: -10.4, allocation: 15 },
-  { emoji: '🟣', name: 'NADS',     pair: 'NADS/MON',   chain: 'MONAD', chainColor: '#836EF9', amount: '8,400',    value: '$5,120',  pnl: '+$1,820', pnlPct: 55.1,  allocation: 11 },
-  { emoji: '🐉', name: 'DRGN',     pair: 'DRGN/WETH',  chain: 'ARB',  chainColor: '#12AAFF', amount: '2,140',    value: '$4,108',  pnl: '+$342',   pnlPct: 9.1,   allocation: 8  },
-  { emoji: '🤖', name: 'AIGEN',    pair: 'AIGEN/ETH',  chain: 'ETH',  chainColor: '#627EEA', amount: '1,820',    value: '$3,211',  pnl: '-$214',   pnlPct: -6.2,  allocation: 7  },
-  { emoji: '🐈', name: 'PURR',     pair: 'PURR/HYPE',  chain: 'HYPE', chainColor: '#3CFFBE', amount: '940',      value: '$2,480',  pnl: '+$614',   pnlPct: 32.9,  allocation: 5  },
-  { emoji: '💎', name: 'DOGS',     pair: 'DOGS/TON',   chain: 'TON',  chainColor: '#0098EA', amount: '420,000',  value: '$1,240',  pnl: '+$82',    pnlPct: 7.1,   allocation: 2  },
-];
+function formatAlphaPoints(value: number | null | undefined): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 'Unavailable';
+  return new Intl.NumberFormat('en-US').format(value);
+}
 
-const ACTIVITY: TxRow[] = [
-  { type: 'buy',     token: 'NADS',    amount: '8,400',    value: '$3,300',  time: '2h ago',   txHash: '7Kea...mp9B', status: 'confirmed' },
-  { type: 'sell',    token: 'BANTAH',  amount: '12,000',   value: '$1,604',  time: '5h ago',   txHash: '2Rfa...xQ3D', status: 'confirmed' },
-  { type: 'buy',     token: 'PURR',    amount: '940',      value: '$1,866',  time: '8h ago',   txHash: '9Hca...nL7G', status: 'confirmed' },
-  { type: 'stake',   token: 'BXBT',    amount: '200',      value: '$200',    time: '1d ago',   txHash: '4Mda...sW2K', status: 'confirmed' },
-  { type: 'buy',     token: 'BOLTAI',  amount: '84,200',   value: '$7,726',  time: '2d ago',   txHash: '3Pba...vN8F', status: 'confirmed' },
-  { type: 'sell',    token: 'LUNA2',   amount: '21,400',   value: '$4,200',  time: '3d ago',   txHash: '8Qca...tR4E', status: 'confirmed' },
-  { type: 'buy',     token: 'DRGN',    amount: '2,140',    value: '$3,766',  time: '4d ago',   txHash: '1Eba...wM6C', status: 'confirmed' },
-  { type: 'unstake', token: 'BXBT',    amount: '100',      value: '$100',    time: '5d ago',   txHash: '6Oba...pJ5A', status: 'confirmed' },
-];
+function getServerDirectContact(serverProfile: AuthVerificationResponse | null): string | null {
+  if (!serverProfile) return null;
 
-const BATTLES: Battle[] = [
-  { opponent: 'BullBot v3',    result: 'win',  stake: '50 BXBT',  pnl: '+$48',  time: '1h ago',   token: 'PEPEFUN' },
-  { opponent: 'SharkMode',     result: 'loss', stake: '30 BXBT',  pnl: '-$29',  time: '6h ago',   token: 'BANTAH'  },
-  { opponent: 'T6Agent Pro',   result: 'win',  stake: '100 BXBT', pnl: '+$98',  time: '1d ago',   token: 'NADS'    },
-  { opponent: 'MoonCaller',    result: 'win',  stake: '25 BXBT',  pnl: '+$24',  time: '2d ago',   token: 'BOLTAI'  },
-  { opponent: 'DiceBot Alpha', result: 'draw', stake: '50 BXBT',  pnl: '$0',    time: '3d ago',   token: 'DRGN'    },
-  { opponent: 'FoxAI Trader',  result: 'loss', stake: '75 BXBT',  pnl: '-$74',  time: '5d ago',   token: 'AIGEN'   },
-];
-
-const BADGES = [
-  { icon: '🏆', label: 'First Win',       earned: true  },
-  { icon: '🔥', label: '5-Win Streak',    earned: true  },
-  { icon: '💎', label: 'Diamond Hands',   earned: true  },
-  { icon: '🤖', label: 'AI Collaborator', earned: true  },
-  { icon: '🌊', label: '10 Battles',      earned: true  },
-  { icon: '👑', label: 'Top 10',          earned: false },
-  { icon: '⚡', label: 'Speed Trader',    earned: false },
-  { icon: '🦈', label: 'Megalodon',       earned: false },
-];
-
-const TYPE_STYLE = {
-  buy:     { label: 'BUY',     color: 'text-green-400',  bg: 'bg-green-400/10'  },
-  sell:    { label: 'SELL',    color: 'text-red-400',    bg: 'bg-red-400/10'    },
-  stake:   { label: 'STAKE',   color: 'text-blue-400',   bg: 'bg-blue-400/10'   },
-  unstake: { label: 'UNSTAKE', color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
-};
-
-const RESULT_STYLE = {
-  win:  { label: 'WIN',  color: 'text-green-400',  bg: 'bg-green-400/10'  },
-  loss: { label: 'LOSS', color: 'text-red-400',    bg: 'bg-red-400/10'    },
-  draw: { label: 'DRAW', color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
-};
+  return (
+    serverProfile.serverUser.email ??
+    serverProfile.serverUser.phone ??
+    serverProfile.serverUser.googleEmail ??
+    null
+  );
+}
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
+
   const copy = () => {
     navigator.clipboard.writeText(text).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
+
   return (
-    <button onClick={copy} className="p-0.5 text-muted-foreground hover:text-foreground transition">
-      {copied ? <Check size={11} className="text-green-400" /> : <Copy size={11} />}
+    <button
+      onClick={copy}
+      className="rounded-md border border-border bg-background/60 p-1 text-muted-foreground transition hover:text-foreground"
+      title="Copy"
+      type="button"
+    >
+      {copied ? <Check size={12} className="text-success" /> : <Copy size={12} />}
     </button>
   );
 }
 
-export default function ProfilePage() {
-  const [tab, setTab]                       = useState<ProfileTab>('portfolio');
-  const [notifPrice, setNotifPrice]         = useState(true);
-  const [notifBattle, setNotifBattle]       = useState(true);
-  const [notifTx, setNotifTx]               = useState(false);
-  const [darkMode]                           = useState(true);
-  const [showUsd, setShowUsd]               = useState(true);
-
-  const totalValue  = '$48,692';
-  const totalPnl    = '+$8,137';
-  const totalPnlPct = '+20.1%';
-  const wins        = 4;
-  const losses      = 2;
-  const totalBtls   = 6;
-  const winRate     = Math.round((wins / totalBtls) * 100);
+function SnapshotField({
+  label,
+  value,
+  source,
+  emptyText,
+  emptySource,
+  copyText,
+  monospace = false,
+}: {
+  label: string;
+  value: string | null;
+  source?: string | null;
+  emptyText: string;
+  emptySource: string;
+  copyText?: string | null;
+  monospace?: boolean;
+}) {
+  const hasValue = Boolean(value);
 
   return (
-    <div className="h-full flex flex-col bg-background overflow-hidden">
+    <div className="rounded-2xl border border-border bg-background/50 p-4">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-2 flex items-start justify-between gap-3">
+        <div
+          className={`min-w-0 break-all font-semibold text-foreground ${
+            monospace ? 'font-mono text-xs sm:text-sm' : 'text-sm'
+          }`}
+        >
+          {hasValue ? value : emptyText}
+        </div>
+        {hasValue && copyText ? <CopyButton text={copyText} /> : null}
+      </div>
+      <div className="mt-2 text-xs text-muted-foreground">
+        {hasValue ? source ?? 'Direct Privy user data' : emptySource}
+      </div>
+    </div>
+  );
+}
 
-      {/* Hero */}
-      <div className="shrink-0 border-b border-border bg-gradient-to-b from-primary/5 to-background px-4 py-4">
-        <div className="flex items-start gap-4">
-          {/* Avatar */}
+function ConsistencyRow({
+  label,
+  matches,
+  clientValue,
+  serverValue,
+}: {
+  label: string;
+  matches: boolean;
+  clientValue: string;
+  serverValue: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-background/60 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          {label}
+        </div>
+        <span
+          className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] ${
+            matches
+              ? 'border border-success/20 bg-success/10 text-success'
+              : 'border border-destructive/30 bg-destructive/10 text-destructive'
+          }`}
+        >
+          {matches ? 'Match' : 'Mismatch'}
+        </span>
+      </div>
+
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <div>
+          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Client
+          </div>
+          <div className="mt-1 break-all text-xs text-foreground">{clientValue}</div>
+        </div>
+        <div>
+          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Server
+          </div>
+          <div className="mt-1 break-all text-xs text-foreground">{serverValue}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AccountRow({ account }: { account: LinkedAccountWithMetadata }) {
+  const value = getAccountValue(account);
+  const meta = getAccountMeta(account);
+  const copyable =
+    account.type === 'email' ||
+    account.type === 'phone' ||
+    account.type === 'wallet' ||
+    account.type === 'smart_wallet' ||
+    account.type === 'custom_auth';
+
+  return (
+    <div className="rounded-2xl border border-border bg-card/80 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-primary">
+            {getAccountLabel(account)}
+          </div>
+          <div className="mt-2 break-all text-sm font-semibold text-foreground">{value}</div>
+          {meta ? <div className="mt-1 text-xs text-muted-foreground">{meta}</div> : null}
+        </div>
+        {copyable ? <CopyButton text={value} /> : null}
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-muted-foreground">
+        <span className="rounded-full border border-border px-2 py-0.5">
+          First linked {formatPrivyDate(account.firstVerifiedAt)}
+        </span>
+        <span className="rounded-full border border-border px-2 py-0.5">
+          Last used {formatPrivyDate(account.latestVerifiedAt)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export default function ProfilePage() {
+  const {
+    ready,
+    authenticated,
+    user,
+    login,
+    logout,
+    linkEmail,
+    linkGoogle,
+    linkTwitter,
+    linkWallet,
+    getAccessToken,
+  } = usePrivy();
+  const { wallets, ready: walletsReady } = useWallets();
+  const [tab, setTab] = useState<ProfileTab>('identity');
+  const [serverProfile, setServerProfile] = useState<AuthVerificationResponse | null>(null);
+  const [serverLoading, setServerLoading] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  async function loadServerProfile() {
+    if (!authenticated) {
+      setServerProfile(null);
+      setServerError(null);
+      return;
+    }
+
+    setServerLoading(true);
+    setServerError(null);
+
+    try {
+      const token = await getAccessToken();
+
+      if (!token) {
+        throw new Error('No Privy access token was available for this session.');
+      }
+
+      const response = await fetch('/api/auth/me', {
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+      });
+
+      const payload = (await response.json().catch(() => null)) as
+        | AuthVerificationResponse
+        | { error?: string }
+        | null;
+
+      if (!response.ok) {
+        const payloadError = payload && 'error' in payload ? payload.error : undefined;
+        throw new Error(payloadError ?? 'Unable to verify your session on the server.');
+      }
+
+      setServerProfile(payload as AuthVerificationResponse);
+    } catch (error) {
+      setServerProfile(null);
+      setServerError(error instanceof Error ? error.message : 'Unable to verify your session on the server.');
+    } finally {
+      setServerLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!ready || !authenticated) {
+      setServerProfile(null);
+      setServerError(null);
+      return;
+    }
+
+    void loadServerProfile();
+  }, [authenticated, ready, user?.id, user?.linkedAccounts.length, user?.isGuest]);
+
+  if (!ready) {
+    return (
+      <div className="h-full bg-background px-4 pt-4 md:flex md:items-center md:justify-center md:pt-0">
+        <div className="flex items-center gap-3 rounded-2xl border border-border bg-card px-5 py-4 text-sm text-muted-foreground">
+          <LoaderCircle size={18} className="animate-spin text-primary" />
+          Preparing your authenticated workspace...
+        </div>
+      </div>
+    );
+  }
+
+  if (!authenticated || !user) {
+    return (
+      <div className="h-full overflow-y-auto bg-background px-3 py-4 md:px-4">
+        <div className="mx-auto flex min-h-full max-w-md items-center">
+          <div className="w-full border-y border-border py-5">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">Profile</div>
+            <h2 className="mt-2 text-xl font-black tracking-tight text-foreground">Sign in to view your profile</h2>
+            <p className="mt-2 text-sm leading-5 text-muted-foreground">
+              Access your linked wallets, Alpha Points, and account settings.
+            </p>
+            <button
+              onClick={() => login()}
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground transition hover:opacity-90 sm:w-auto"
+              type="button"
+            >
+              <Sparkles size={15} />
+              Sign In
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const displayField = getUserDisplayField(user);
+  const handleField = getUserHandleField(user);
+  const contactField = getPrimaryContactField(user);
+  const userHandle = handleField.value;
+  const avatarUrl = getUserAvatarUrl(user);
+  const primaryContact = contactField.value;
+  const primaryWallet = getPrimaryWalletAddress(user);
+  const linkedWallets = getLinkedWalletAccounts(user);
+  const nonWalletAccounts = getNonWalletAccounts(user);
+  const linkedAccountTypes = Array.from(new Set(user.linkedAccounts.map((account) => account.type))).sort();
+  const acceptedTerms = serverProfile?.serverUser.hasAcceptedTerms ?? user.hasAcceptedTerms;
+  const serverDirectContact = getServerDirectContact(serverProfile);
+  const serverLinkedAccountTypes = [...(serverProfile?.serverUser.linkedAccountTypes ?? [])].sort();
+  const alphaPointsAccount = serverProfile?.serverUser.alphaPoints ?? null;
+  const displayName =
+    displayField.source?.startsWith('Derived') && alphaPointsAccount
+      ? alphaPointsAccount.username
+      : displayField.value ?? alphaPointsAccount?.username ?? shortenAddress(user.id, 10, 8);
+  const alphaPointsBalance = alphaPointsAccount
+    ? `${formatAlphaPoints(alphaPointsAccount.balance)} ${alphaPointsAccount.label}`
+    : null;
+  const consistencyChecks = serverProfile
+    ? [
+        {
+          label: 'Privy DID',
+          matches: user.id === serverProfile.serverUser.id,
+          clientValue: user.id,
+          serverValue: serverProfile.serverUser.id,
+        },
+        {
+          label: 'Session user id',
+          matches: user.id === serverProfile.session.userId,
+          clientValue: user.id,
+          serverValue: serverProfile.session.userId,
+        },
+        {
+          label: 'Created at',
+          matches: normalizeDateValue(user.createdAt) === normalizeDateValue(serverProfile.serverUser.createdAt),
+          clientValue: new Date(user.createdAt).toISOString(),
+          serverValue: new Date(serverProfile.serverUser.createdAt).toISOString(),
+        },
+        {
+          label: 'Linked account count',
+          matches: user.linkedAccounts.length === serverProfile.serverUser.linkedAccountCount,
+          clientValue: `${user.linkedAccounts.length}`,
+          serverValue: `${serverProfile.serverUser.linkedAccountCount}`,
+        },
+        {
+          label: 'Linked account types',
+          matches: linkedAccountTypes.join('|') === serverLinkedAccountTypes.join('|'),
+          clientValue: linkedAccountTypes.join(', ') || 'None',
+          serverValue: serverLinkedAccountTypes.join(', ') || 'None',
+        },
+        {
+          label: 'Guest flag',
+          matches: user.isGuest === serverProfile.serverUser.isGuest,
+          clientValue: formatPresence(user.isGuest),
+          serverValue: formatPresence(serverProfile.serverUser.isGuest),
+        },
+        {
+          label: 'Primary wallet',
+          matches: normalizeValue(primaryWallet) === normalizeValue(serverProfile.serverUser.wallet),
+          clientValue: primaryWallet ?? 'No linked wallet',
+          serverValue: serverProfile.serverUser.wallet ?? 'No linked wallet',
+        },
+        {
+          label: 'Direct contact',
+          matches: normalizeValue(primaryContact) === normalizeValue(serverDirectContact),
+          clientValue: primaryContact ?? 'No direct contact linked',
+          serverValue: serverDirectContact ?? 'No direct contact linked',
+        },
+      ]
+    : [];
+
+  return (
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
+      <div className="shrink-0 border-b border-border bg-[radial-gradient(circle_at_top_left,rgba(245,46,43,0.18),transparent_28%),linear-gradient(180deg,rgba(245,46,43,0.06),transparent_72%)] px-4 py-4">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start">
           <div className="relative shrink-0">
-            <div className="w-16 h-16 rounded-full bg-primary/20 border-2 border-primary/40 flex items-center justify-center text-3xl">
-              🎯
-            </div>
-            <span className="absolute -bottom-1 -right-1 text-base">⚡</span>
-          </div>
-
-          {/* Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="font-black text-lg text-foreground">AlphaTrader</h2>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-bold border border-primary/30">
-                🔥 Veteran
-              </span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 font-semibold">
-                Rank #6
-              </span>
-            </div>
-            <div className="flex items-center gap-1 mt-0.5">
-              <span className="text-xs font-mono text-muted-foreground">0xD1f4...7A3C</span>
-              <CopyButton text="0xD1f4BCA9217A3C" />
-              <button className="p-0.5 text-muted-foreground hover:text-foreground transition">
-                <ExternalLink size={11} />
-              </button>
-            </div>
-            <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
-              <span>Joined <span className="text-foreground font-semibold">Feb 2025</span></span>
-              <span>·</span>
-              <span><span className="text-foreground font-semibold">84</span> followers</span>
-              <span>·</span>
-              <span><span className="text-foreground font-semibold">19</span> following</span>
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={displayName}
+                className="h-18 w-18 rounded-[22px] border border-primary/25 object-cover shadow-lg"
+              />
+            ) : (
+              <div className="flex h-18 w-18 items-center justify-center rounded-[22px] border border-primary/25 bg-primary/15 text-2xl font-black text-primary shadow-lg">
+                {getInitials(displayName)}
+              </div>
+            )}
+            <div className="absolute -bottom-2 -right-2 rounded-full border border-border bg-card px-2 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-success">
+              Live
             </div>
           </div>
 
-          {/* Quick stats */}
-          <div className="hidden sm:grid grid-cols-4 gap-2 shrink-0">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-2xl font-black tracking-tight text-foreground">{displayName}</h2>
+              {serverProfile?.verified ? (
+                <span className="inline-flex items-center gap-1 rounded-full border border-success/20 bg-success/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-success">
+                  <ShieldCheck size={11} />
+                  Server Verified
+                </span>
+              ) : null}
+              <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+                Privy User
+              </span>
+            </div>
+
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+              {userHandle ? <span>{userHandle}</span> : null}
+              {userHandle && primaryContact ? <span>|</span> : null}
+              {primaryContact ? <span>{primaryContact}</span> : null}
+              {(userHandle || primaryContact) && primaryWallet ? <span>|</span> : null}
+              {primaryWallet ? (
+                <span className="inline-flex items-center gap-1 font-mono">
+                  {shortenAddress(primaryWallet, 8, 4)}
+                  <CopyButton text={primaryWallet} />
+                </span>
+              ) : null}
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-muted-foreground">
+              <span className="rounded-full border border-border bg-background/60 px-2 py-1">
+                Joined {formatPrivyDate(user.createdAt)}
+              </span>
+              <span className="rounded-full border border-border bg-background/60 px-2 py-1">
+                {user.linkedAccounts.length} linked account{user.linkedAccounts.length === 1 ? '' : 's'}
+              </span>
+              <span className="rounded-full border border-border bg-background/60 px-2 py-1">
+                {wallets.length} connected wallet{wallets.length === 1 ? '' : 's'}
+              </span>
+              <span className="rounded-full border border-border bg-background/60 px-2 py-1">
+                MFA {user.mfaMethods.length > 0 ? user.mfaMethods.join(', ') : 'off'}
+              </span>
+              <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-1 font-semibold text-foreground">
+                {alphaPointsBalance ??
+                  (serverLoading
+                    ? 'Alpha Points syncing...'
+                    : serverError
+                      ? 'Alpha Points unavailable'
+                      : 'Alpha Points pending')}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:min-w-[560px] xl:grid-cols-5">
             {[
-              { label: 'Portfolio',  value: totalValue, sub: totalPnlPct, color: 'text-green-400', icon: <Wallet size={12} /> },
-              { label: 'Total P&L',  value: totalPnl,   sub: 'all time',  color: 'text-green-400', icon: <TrendingUp size={12} /> },
-              { label: 'Win Rate',   value: `${winRate}%`, sub: `${wins}W / ${losses}L`, color: winRate >= 60 ? 'text-green-400' : 'text-yellow-400', icon: <ShieldCheck size={12} /> },
-              { label: 'Battles',   value: totalBtls,  sub: `${wins} wins`,  color: 'text-primary', icon: <Swords size={12} /> },
-            ].map(s => (
-              <div key={s.label} className="text-center border border-border rounded px-3 py-2 bg-card min-w-[80px]">
-                <div className={`flex items-center justify-center gap-0.5 mb-0.5 ${s.color}`}>{s.icon}</div>
-                <div className={`text-sm font-black ${s.color}`}>{s.value}</div>
-                <div className="text-[10px] text-muted-foreground">{s.sub}</div>
-                <div className="text-[9px] text-muted-foreground mt-0.5">{s.label}</div>
+              {
+                label: 'Alpha Points',
+                value: alphaPointsAccount
+                  ? formatAlphaPoints(alphaPointsAccount.balance)
+                  : serverLoading
+                    ? 'Checking'
+                    : serverError
+                      ? 'Unavailable'
+                      : 'Pending',
+                sub: alphaPointsAccount
+                  ? `${alphaPointsAccount.tierEmoji} ${alphaPointsAccount.tierLabel} tier | ${alphaPointsAccount.streakDays}d streak`
+                  : 'server-backed balance',
+                icon: <Sparkles size={12} />,
+              },
+              {
+                label: 'Linked',
+                value: `${user.linkedAccounts.length}`,
+                sub: `${linkedAccountTypes.length} account type${linkedAccountTypes.length === 1 ? '' : 's'}`,
+                icon: <Link2 size={12} />,
+              },
+              {
+                label: 'Wallets',
+                value: `${wallets.length}`,
+                sub: walletsReady ? 'browser session' : 'loading session',
+                icon: <Wallet size={12} />,
+              },
+              {
+                label: 'Security',
+                value: acceptedTerms ? 'Accepted' : 'Not accepted',
+                sub: user.mfaMethods.length > 0 ? `${user.mfaMethods.length} MFA method(s)` : 'MFA off',
+                icon: <KeyRound size={12} />,
+              },
+              {
+                label: 'Session',
+                value: serverProfile?.verified ? 'Verified' : serverLoading ? 'Checking' : serverError ? 'Error' : 'Not checked',
+                sub: serverProfile
+                  ? shortenAddress(serverProfile.session.sessionId, 6, 4)
+                  : serverError
+                    ? 'verification failed'
+                    : 'awaiting server check',
+                icon: <BadgeCheck size={12} />,
+              },
+            ].map((item) => (
+              <div key={item.label} className="rounded-2xl border border-border bg-card/90 px-3 py-3">
+                <div className="flex items-center gap-1 text-primary">{item.icon}</div>
+                <div className="mt-2 text-sm font-black text-foreground">{item.value}</div>
+                <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{item.label}</div>
+                <div className="mt-1 text-[11px] text-muted-foreground">{item.sub}</div>
               </div>
             ))}
           </div>
         </div>
-
-        {/* Badges row */}
-        <div className="flex items-center gap-1.5 mt-3 flex-wrap">
-          {BADGES.map(b => (
-            <span
-              key={b.label}
-              title={b.label}
-              className={`text-xs px-2 py-0.5 rounded border transition ${
-                b.earned
-                  ? 'border-primary/30 bg-primary/10 text-foreground'
-                  : 'border-border bg-muted/30 text-muted-foreground opacity-40'
-              }`}
-            >
-              {b.icon} {b.label}
-            </span>
-          ))}
-        </div>
       </div>
 
-      {/* Tabs */}
-      <div className="shrink-0 flex items-center border-b border-border overflow-x-auto">
+      <div className="shrink-0 flex items-center overflow-x-auto border-b border-border">
         {([
-          { key: 'portfolio', label: '💼 Portfolio'   },
-          { key: 'activity',  label: '📋 Activity'    },
-          { key: 'battles',   label: '⚔️ Battles'    },
-          { key: 'settings',  label: '⚙️ Settings'   },
-        ] as { key: ProfileTab; label: string }[]).map(t => (
+          { key: 'identity', label: 'Identity' },
+          { key: 'accounts', label: 'Linked Accounts' },
+          { key: 'wallets', label: 'Wallets' },
+          { key: 'security', label: 'Security' },
+        ] as { key: ProfileTab; label: string }[]).map((item) => (
           <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`text-xs px-4 py-2.5 border-b-2 transition whitespace-nowrap shrink-0 ${
-              tab === t.key
-                ? 'border-primary text-foreground font-bold'
+            key={item.key}
+            onClick={() => setTab(item.key)}
+            className={`border-b-2 px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] transition ${
+              tab === item.key
+                ? 'border-primary text-foreground'
                 : 'border-transparent text-muted-foreground hover:text-foreground'
             }`}
+            type="button"
           >
-            {t.label}
+            {item.label}
           </button>
         ))}
       </div>
 
-      {/* Tab content */}
-      <div className="flex-1 overflow-y-auto">
-
-        {/* Portfolio */}
-        {tab === 'portfolio' && (
-          <div>
-            {/* Summary bar */}
-            <div className="px-4 py-2 border-b border-border flex items-center justify-between bg-muted/20 text-xs">
-              <div className="flex items-center gap-3">
-                <span className="text-muted-foreground">Total Value</span>
-                <span className="font-black text-foreground text-sm">{totalValue}</span>
-                <span className="text-green-400 font-bold">{totalPnl} ({totalPnlPct})</span>
-              </div>
-              <button
-                onClick={() => setShowUsd(s => !s)}
-                className="text-muted-foreground hover:text-foreground border border-border px-2 py-0.5 rounded transition"
-              >
-                {showUsd ? 'USD' : 'SOL'}
-              </button>
-            </div>
-
-            {/* Allocation bar */}
-            <div className="px-4 py-2 border-b border-border">
-              <div className="flex h-2 rounded-full overflow-hidden gap-px">
-                {HOLDINGS.map((h, i) => (
-                  <div
-                    key={h.name}
-                    className="h-full transition-all"
-                    style={{
-                      width: `${h.allocation}%`,
-                      backgroundColor: h.chainColor,
-                      opacity: 0.7 + i * 0.03,
-                    }}
-                    title={`${h.name} ${h.allocation}%`}
-                  />
-                ))}
-              </div>
-              <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                {HOLDINGS.slice(0, 5).map(h => (
-                  <div key={h.name} className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                    <span className="w-2 h-2 rounded-sm inline-block" style={{ backgroundColor: h.chainColor }} />
-                    {h.name} {h.allocation}%
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Holdings table */}
-            <table className="w-full text-xs border-collapse min-w-[600px]">
-              <thead className="sticky top-0 bg-background border-b border-border z-10">
-                <tr className="text-muted-foreground text-left">
-                  <th className="px-4 py-2 font-medium">Token</th>
-                  <th className="px-3 py-2 font-medium text-right">Amount</th>
-                  <th className="px-3 py-2 font-medium text-right">Value</th>
-                  <th className="px-3 py-2 font-medium text-right">P&amp;L</th>
-                  <th className="px-3 py-2 font-medium text-right">Alloc</th>
-                </tr>
-              </thead>
-              <tbody>
-                {HOLDINGS.map(h => (
-                  <tr key={h.name} className="border-b border-border/40 hover:bg-muted/30 transition cursor-pointer">
-                    <td className="px-4 py-2.5">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg leading-none">{h.emoji}</span>
-                        <div>
-                          <div className="font-bold text-foreground flex items-center gap-1">
-                            {h.pair}
-                            <span className="text-[8px] px-1 py-0.5 rounded font-semibold text-white" style={{ backgroundColor: h.chainColor }}>
-                              {h.chain}
-                            </span>
-                          </div>
-                          <div className="text-[10px] text-muted-foreground">{h.name}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-3 py-2.5 text-right font-mono text-muted-foreground">{h.amount}</td>
-                    <td className="px-3 py-2.5 text-right font-bold font-mono text-foreground">{h.value}</td>
-                    <td className="px-3 py-2.5 text-right">
-                      <div className={`font-bold font-mono ${h.pnlPct >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        {h.pnl}
-                      </div>
-                      <div className={`text-[10px] ${h.pnlPct >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        {h.pnlPct >= 0 ? '+' : ''}{h.pnlPct}%
-                      </div>
-                    </td>
-                    <td className="px-3 py-2.5 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <div className="w-12 h-1.5 bg-muted rounded-full overflow-hidden">
-                          <div className="h-full rounded-full bg-primary/60" style={{ width: `${h.allocation * 3}%` }} />
-                        </div>
-                        <span className="text-muted-foreground font-mono">{h.allocation}%</span>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Activity */}
-        {tab === 'activity' && (
-          <div>
-            <div className="px-4 py-2 border-b border-border bg-muted/20 text-xs flex items-center justify-between">
-              <span className="text-muted-foreground">{ACTIVITY.length} transactions</span>
-              <button className="text-primary hover:underline flex items-center gap-1">View on-chain <ExternalLink size={10} /></button>
-            </div>
-            <div className="divide-y divide-border/40">
-              {ACTIVITY.map((tx, i) => {
-                const st = TYPE_STYLE[tx.type];
-                return (
-                  <div key={i} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-black ${st.bg} ${st.color}`}>
-                      {st.label[0]}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${st.bg} ${st.color}`}>{st.label}</span>
-                        <span className="text-xs font-bold text-foreground">{tx.token}</span>
-                        <span className="text-[10px] text-muted-foreground">{tx.amount}</span>
-                      </div>
-                      <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
-                        <span className="font-mono">{tx.txHash}</span>
-                        <span className={tx.status === 'confirmed' ? 'text-green-400' : 'text-yellow-400'}>
-                          {tx.status === 'confirmed' ? '✓ confirmed' : '⏳ pending'}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <div className="text-xs font-bold text-foreground">{tx.value}</div>
-                      <div className="text-[10px] text-muted-foreground">{tx.time}</div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Battles */}
-        {tab === 'battles' && (
-          <div>
-            <div className="px-4 py-2 border-b border-border bg-muted/20 flex items-center gap-4 text-xs">
-              <span className="text-muted-foreground">{totalBtls} battles</span>
-              <span className="text-green-400 font-bold">{wins}W</span>
-              <span className="text-red-400 font-bold">{losses}L</span>
-              <span className="text-yellow-400 font-bold">1D</span>
-              <span className="ml-auto text-muted-foreground">Win rate: <span className="text-foreground font-bold">{winRate}%</span></span>
-            </div>
-            <div className="divide-y divide-border/40">
-              {BATTLES.map((b, i) => {
-                const rs = RESULT_STYLE[b.result];
-                return (
-                  <div key={i} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition">
-                    <Swords size={16} className={rs.color} />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-1.5 text-xs">
-                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded ${rs.bg} ${rs.color}`}>{rs.label}</span>
-                        <span className="font-bold text-foreground">vs {b.opponent}</span>
-                        <span className="text-muted-foreground">on {b.token}</span>
-                      </div>
-                      <div className="text-[10px] text-muted-foreground mt-0.5">Stake: {b.stake} · {b.time}</div>
-                    </div>
-                    <div className={`text-right text-sm font-black font-mono ${b.result === 'win' ? 'text-green-400' : b.result === 'loss' ? 'text-red-400' : 'text-yellow-400'}`}>
-                      {b.pnl}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Settings */}
-        {tab === 'settings' && (
-          <div className="max-w-lg px-4 py-4 space-y-4">
-
-            {/* Account */}
-            <div className="border border-border rounded-lg overflow-hidden">
-              <div className="px-4 py-2 bg-muted/30 text-xs font-bold text-muted-foreground uppercase tracking-wider border-b border-border flex items-center gap-1.5">
-                <Wallet size={11} /> Account
-              </div>
-              <div className="divide-y divide-border/40">
-                {[
-                  { label: 'Display Name', value: 'AlphaTrader' },
-                  { label: 'Connected Wallet', value: '0xD1f4...7A3C' },
-                  { label: 'Network', value: 'Solana Mainnet' },
-                ].map(row => (
-                  <div key={row.label} className="flex items-center justify-between px-4 py-2.5 hover:bg-muted/20 cursor-pointer">
-                    <span className="text-xs text-muted-foreground">{row.label}</span>
-                    <div className="flex items-center gap-1 text-xs text-foreground font-medium">
-                      {row.value}
-                      <ChevronRight size={11} className="text-muted-foreground" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Notifications */}
-            <div className="border border-border rounded-lg overflow-hidden">
-              <div className="px-4 py-2 bg-muted/30 text-xs font-bold text-muted-foreground uppercase tracking-wider border-b border-border flex items-center gap-1.5">
-                <Bell size={11} /> Notifications
-              </div>
-              <div className="divide-y divide-border/40">
-                {[
-                  { label: 'Price Alerts',      sub: 'Notify me when prices cross my targets', val: notifPrice,  set: setNotifPrice  },
-                  { label: 'Battle Updates',    sub: 'Battle start, result, and stake events',  val: notifBattle, set: setNotifBattle },
-                  { label: 'Transactions',      sub: 'Confirm swaps, stakes, and transfers',    val: notifTx,     set: setNotifTx     },
-                ].map(row => (
-                  <div key={row.label} className="flex items-center justify-between px-4 py-2.5">
-                    <div>
-                      <div className="text-xs font-medium text-foreground">{row.label}</div>
-                      <div className="text-[10px] text-muted-foreground">{row.sub}</div>
-                    </div>
-                    <button
-                      onClick={() => row.set(v => !v)}
-                      className={`w-9 h-5 rounded-full transition-colors relative ${row.val ? 'bg-primary' : 'bg-muted'}`}
-                    >
-                      <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${row.val ? 'translate-x-4' : 'translate-x-0.5'}`} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Display */}
-            <div className="border border-border rounded-lg overflow-hidden">
-              <div className="px-4 py-2 bg-muted/30 text-xs font-bold text-muted-foreground uppercase tracking-wider border-b border-border flex items-center gap-1.5">
-                <Settings size={11} /> Display
-              </div>
-              <div className="divide-y divide-border/40">
-                <div className="flex items-center justify-between px-4 py-2.5">
-                  <div>
-                    <div className="text-xs font-medium text-foreground">Theme</div>
-                    <div className="text-[10px] text-muted-foreground">Dark / Light mode</div>
-                  </div>
-                  <div className="flex items-center gap-1 border border-border rounded px-2 py-1 text-xs text-muted-foreground">
-                    {darkMode ? <Moon size={11} /> : <Sun size={11} />}
-                    {darkMode ? 'Dark' : 'Light'}
-                  </div>
+      <div className="flex-1 overflow-y-auto p-4">
+        {tab === 'identity' ? (
+          <div className="grid gap-4 xl:grid-cols-[1.2fr,0.8fr]">
+            <div className="space-y-4">
+              <div className="rounded-[28px] border border-border bg-card p-5">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-primary">
+                  Identity Snapshot
                 </div>
-                <div className="flex items-center justify-between px-4 py-2.5">
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <SnapshotField
+                    label="Display Name"
+                    value={displayField.value}
+                    source={displayField.source}
+                    emptyText="No profile display name is available"
+                    emptySource="Privy did not return a name-like field for this user"
+                  />
+                  <SnapshotField
+                    label="Handle"
+                    value={handleField.value ?? alphaPointsAccount?.username ?? null}
+                    source={handleField.source ?? (alphaPointsAccount ? 'AnyAlpha username' : null)}
+                    emptyText="No public username loaded"
+                    emptySource="AnyAlpha has not returned a username for this account yet"
+                  />
+                  <SnapshotField
+                    label="Direct Contact"
+                    value={contactField.value}
+                    source={contactField.source}
+                    emptyText="No email or phone contact linked"
+                    emptySource="Wallets are shown separately and are not treated as contact methods"
+                    copyText={contactField.value}
+                  />
+                  <SnapshotField
+                    label="Primary Wallet"
+                    value={primaryWallet}
+                    source={primaryWallet ? 'Privy wallet record' : null}
+                    emptyText="No primary wallet linked"
+                    emptySource="This authenticated user has not linked a primary wallet"
+                    copyText={primaryWallet}
+                    monospace
+                  />
+                  <SnapshotField
+                    label="Privy DID"
+                    value={user.id}
+                    source="Canonical Privy user id"
+                    emptyText="Unavailable"
+                    emptySource="Privy did not return a user id"
+                    copyText={user.id}
+                    monospace
+                  />
+                  <SnapshotField
+                    label="Joined"
+                    value={formatPrivyDate(user.createdAt)}
+                    source="Privy user.createdAt"
+                    emptyText="Unknown"
+                    emptySource="Privy did not return a creation date"
+                  />
+                  <SnapshotField
+                    label="Alpha Points"
+                    value={alphaPointsBalance}
+                    source={alphaPointsAccount ? 'Server-backed anyAlpha points ledger' : null}
+                    emptyText="Not loaded yet"
+                    emptySource="Run server verification to retrieve the live Alpha Points balance"
+                  />
+                  <SnapshotField
+                    label="Terms Accepted"
+                    value={acceptedTerms ? 'Yes' : 'No'}
+                    source={
+                      serverProfile?.serverUser.hasAcceptedTerms !== null
+                        ? 'Server-verified Privy field'
+                        : 'Privy client user object'
+                    }
+                    emptyText="Unknown"
+                    emptySource="Terms acceptance could not be determined"
+                  />
+                  <SnapshotField
+                    label="Guest Account"
+                    value={user.isGuest ? 'Yes' : 'No'}
+                    source="Privy user.isGuest"
+                    emptyText="Unknown"
+                    emptySource="Privy did not return a guest state"
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-[28px] border border-border bg-card p-5">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-primary">
+                  Primary Linked Accounts
+                </div>
+                <div className="mt-4 grid gap-3">
+                  {user.linkedAccounts.length === 0 ? (
+                    <div className="rounded-2xl border border-border bg-background/60 p-4 text-sm text-muted-foreground">
+                      No linked accounts were returned by Privy for this user.
+                    </div>
+                  ) : (
+                    user.linkedAccounts.slice(0, 6).map((account, index) => {
+                      const value = getAccountValue(account);
+                      const meta = getAccountMeta(account);
+                      const copyable =
+                        account.type === 'email' ||
+                        account.type === 'phone' ||
+                        account.type === 'wallet' ||
+                        account.type === 'smart_wallet' ||
+                        account.type === 'custom_auth';
+
+                      return (
+                        <div key={`${account.type}-${index}-${value}`} className="rounded-2xl border border-border bg-background/60 p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
+                                {getAccountLabel(account)}
+                              </div>
+                              <div className="mt-2 break-all text-sm font-semibold text-foreground">
+                                {value}
+                              </div>
+                              {meta ? (
+                                <div className="mt-1 text-xs text-muted-foreground">{meta}</div>
+                              ) : null}
+                            </div>
+                            {copyable ? <CopyButton text={value} /> : null}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="rounded-[28px] border border-border bg-card p-5">
+                <div className="flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-xs font-medium text-foreground">Currency Display</div>
-                    <div className="text-[10px] text-muted-foreground">Show values in USD or native token</div>
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-primary">
+                      Server Session
+                    </div>
+                    <div className="mt-2 text-sm text-muted-foreground">
+                      The API verifies your Privy access token before returning this block.
+                    </div>
                   </div>
                   <button
-                    onClick={() => setShowUsd(s => !s)}
-                    className={`w-9 h-5 rounded-full transition-colors relative ${showUsd ? 'bg-primary' : 'bg-muted'}`}
+                    onClick={() => void loadServerProfile()}
+                    className="inline-flex items-center gap-2 rounded-xl border border-border bg-background/70 px-3 py-2 text-xs font-semibold text-foreground transition hover:bg-muted/50"
+                    type="button"
                   >
-                    <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${showUsd ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                    <RefreshCw size={13} className={serverLoading ? 'animate-spin' : ''} />
+                    Refresh
                   </button>
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  {serverLoading ? (
+                    <div className="rounded-2xl border border-border bg-background/60 p-4 text-sm text-muted-foreground">
+                      Verifying your session with the server...
+                    </div>
+                  ) : serverError ? (
+                    <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-foreground">
+                      {serverError}
+                    </div>
+                  ) : serverProfile ? (
+                    <>
+                      <div className="rounded-2xl border border-success/20 bg-success/10 p-4">
+                        <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+                          <ShieldCheck size={15} className="text-success" />
+                          Session verified for {shortenAddress(serverProfile.session.userId, 10, 8)}
+                        </div>
+                        <div className="mt-2 text-xs text-muted-foreground">
+                          App {serverProfile.session.appId} | Expires{' '}
+                          {formatPrivyDateTime(serverProfile.session.expiration * 1000)}
+                        </div>
+                      </div>
+                      <div className="grid gap-3">
+                        {[
+                          {
+                            label: 'Session ID',
+                            value: shortenAddress(serverProfile.session.sessionId, 10, 8),
+                          },
+                          {
+                            label: 'Issued',
+                            value: formatPrivyDateTime(serverProfile.session.issuedAt * 1000),
+                          },
+                          {
+                            label: 'Server user record',
+                            value: formatPrivyDate(serverProfile.serverUser.createdAt),
+                          },
+                          {
+                            label: 'Alpha Points',
+                            value: `${formatAlphaPoints(serverProfile.serverUser.alphaPoints.balance)} balance`,
+                          },
+                        ].map((field) => (
+                          <div key={field.label} className="rounded-2xl border border-border bg-background/60 p-4">
+                            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                              {field.label}
+                            </div>
+                            <div className="mt-2 text-sm font-semibold text-foreground">{field.value}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="rounded-2xl border border-border bg-background/60 p-4 text-sm text-muted-foreground">
+                      Session verification has not been loaded yet.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-[28px] border border-border bg-card p-5">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-primary">
+                  Client vs Server
+                </div>
+                <div className="mt-2 text-sm text-muted-foreground">
+                  These checks compare the browser session user to the API-verified Privy user.
+                </div>
+                <div className="mt-4 space-y-3">
+                  {serverProfile ? (
+                    consistencyChecks.map((check) => (
+                      <ConsistencyRow
+                        key={check.label}
+                        label={check.label}
+                        matches={check.matches}
+                        clientValue={check.clientValue}
+                        serverValue={check.serverValue}
+                      />
+                    ))
+                  ) : (
+                    <div className="rounded-2xl border border-border bg-background/60 p-4 text-sm text-muted-foreground">
+                      Run server verification to compare client and server identity fields.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-[28px] border border-border bg-card p-5">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-primary">
+                  Custom Metadata
+                </div>
+                <div className="mt-4 rounded-2xl border border-border bg-background/70 p-4">
+                  {serverProfile?.serverUser.customMetadata ? (
+                    <pre className="overflow-x-auto text-xs leading-6 text-muted-foreground">
+                      {JSON.stringify(serverProfile.serverUser.customMetadata, null, 2)}
+                    </pre>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      No custom Privy metadata is attached to this user yet.
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
+          </div>
+        ) : null}
 
-            {/* Danger zone */}
-            <div className="border border-destructive/30 rounded-lg overflow-hidden">
-              <div className="px-4 py-2 bg-destructive/5 text-xs font-bold text-destructive uppercase tracking-wider border-b border-destructive/20">
-                Danger Zone
-              </div>
-              <div className="px-4 py-3 flex items-center justify-between">
+        {tab === 'accounts' ? (
+          user.linkedAccounts.length === 0 ? (
+            <div className="rounded-[28px] border border-border bg-card p-5 text-sm text-muted-foreground">
+              Privy did not return any linked accounts for this authenticated user.
+            </div>
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {user.linkedAccounts.map((account, index) => (
+                <AccountRow key={`${account.type}-${index}-${getAccountValue(account)}`} account={account} />
+              ))}
+            </div>
+          )
+        ) : null}
+
+        {tab === 'wallets' ? (
+          <div className="grid gap-4 xl:grid-cols-2">
+            <div className="rounded-[28px] border border-border bg-card p-5">
+              <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-xs font-medium text-foreground">Disconnect Wallet</div>
-                  <div className="text-[10px] text-muted-foreground">Remove wallet connection from anyAlpha</div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-primary">
+                    Connected Wallets
+                  </div>
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    Wallets currently available to this browser session.
+                  </div>
                 </div>
-                <button className="text-xs px-3 py-1.5 border border-destructive/50 text-destructive rounded hover:bg-destructive/10 transition">
-                  Disconnect
+                <button
+                  onClick={() => linkWallet()}
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground transition hover:opacity-90"
+                  type="button"
+                >
+                  <Wallet size={13} />
+                  Add Wallet
+                </button>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {wallets.length === 0 ? (
+                  <div className="rounded-2xl border border-border bg-background/60 p-4 text-sm text-muted-foreground">
+                    No wallets are connected to this browser session yet.
+                  </div>
+                ) : (
+                  wallets.map((wallet) => (
+                    <div key={`${wallet.address}-${wallet.walletClientType}`} className="rounded-2xl border border-border bg-background/60 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <div className="text-sm font-bold text-foreground">{getConnectedWalletLabel(wallet)}</div>
+                            <span className="rounded-full border border-border px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                              {wallet.type}
+                            </span>
+                            {wallet.linked ? (
+                              <span className="rounded-full border border-success/20 bg-success/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-success">
+                                Linked
+                              </span>
+                            ) : null}
+                          </div>
+                          <div className="mt-2 font-mono text-xs text-muted-foreground">{wallet.address}</div>
+                          <div className="mt-2 text-xs text-muted-foreground">
+                            {(wallet.walletClientType ?? 'unknown wallet client')} |{' '}
+                            {(wallet.connectorType ?? 'unknown connector')} | Connected{' '}
+                            {formatPrivyDateTime(wallet.connectedAt)}
+                          </div>
+                        </div>
+                        <CopyButton text={wallet.address} />
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-[28px] border border-border bg-card p-5">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-primary">
+                Linked Wallet Inventory
+              </div>
+              <div className="mt-2 text-sm text-muted-foreground">
+                Wallets permanently attached to the authenticated Privy user.
+              </div>
+              <div className="mt-4 space-y-3">
+                {linkedWallets.length === 0 ? (
+                  <div className="rounded-2xl border border-border bg-background/60 p-4 text-sm text-muted-foreground">
+                    No wallet identities are linked to this user yet.
+                  </div>
+                ) : (
+                  linkedWallets.map((wallet) => (
+                    <div key={`${wallet.address}-${wallet.walletClientType ?? 'wallet'}`} className="rounded-2xl border border-border bg-background/60 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="text-sm font-bold text-foreground">
+                            {wallet.walletClientType === 'privy' || wallet.walletClientType === 'privy-v2'
+                              ? 'Embedded wallet'
+                              : wallet.walletClientType ?? 'Wallet'}
+                          </div>
+                          <div className="mt-2 font-mono text-xs text-muted-foreground">{wallet.address}</div>
+                          <div className="mt-2 text-xs text-muted-foreground">
+                            {wallet.chainType.toUpperCase()} | {wallet.imported ? 'Imported' : 'Native'} | First linked{' '}
+                            {formatPrivyDate(wallet.firstVerifiedAt)}
+                          </div>
+                        </div>
+                        <CopyButton text={wallet.address} />
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {tab === 'security' ? (
+          <div className="grid gap-4 xl:grid-cols-[0.9fr,1.1fr]">
+            <div className="rounded-[28px] border border-border bg-card p-5">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-primary">
+                Security Status
+              </div>
+              <div className="mt-4 space-y-3">
+                {[
+                  {
+                    label: 'Terms accepted',
+                    value: acceptedTerms ? 'Yes' : 'No',
+                  },
+                  {
+                    label: 'Guest account',
+                    value: user.isGuest ? 'Yes' : 'No',
+                  },
+                  {
+                    label: 'MFA methods',
+                    value: user.mfaMethods.length > 0 ? user.mfaMethods.join(', ') : 'None enabled',
+                  },
+                  {
+                    label: 'Server verification',
+                    value: serverProfile?.verified ? 'Verified' : serverLoading ? 'Checking...' : 'Not verified yet',
+                  },
+                  {
+                    label: 'Direct contact match',
+                    value: serverProfile
+                      ? normalizeValue(primaryContact) === normalizeValue(serverDirectContact)
+                        ? 'Yes'
+                        : 'No'
+                      : 'Not checked',
+                  },
+                ].map((field) => (
+                  <div key={field.label} className="rounded-2xl border border-border bg-background/60 p-4">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      {field.label}
+                    </div>
+                    <div className="mt-2 text-sm font-semibold text-foreground">{field.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[28px] border border-border bg-card p-5">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-primary">
+                Account Actions
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <button
+                  onClick={() => (user.email ? linkWallet() : linkEmail())}
+                  className="rounded-2xl border border-border bg-background/70 p-4 text-left transition hover:bg-muted/40"
+                  type="button"
+                >
+                  <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+                    <Bell size={15} className="text-primary" />
+                    {user.email ? 'Add another wallet' : 'Link email'}
+                  </div>
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    {user.email
+                      ? 'Open Privy and attach another wallet identity to this account.'
+                      : 'Attach an email address for recovery and cross-device sign-in.'}
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => linkWallet()}
+                  className="rounded-2xl border border-border bg-background/70 p-4 text-left transition hover:bg-muted/40"
+                  type="button"
+                >
+                  <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+                    <Wallet size={15} className="text-primary" />
+                    Link wallet
+                  </div>
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    Connect and link an EVM or Solana wallet through the Privy modal.
+                  </div>
+                </button>
+
+                {!nonWalletAccounts.some((account) => account.type === 'google_oauth') ? (
+                  <button
+                    onClick={() => linkGoogle()}
+                    className="rounded-2xl border border-border bg-background/70 p-4 text-left transition hover:bg-muted/40"
+                    type="button"
+                  >
+                    <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+                      <ArrowUpRight size={15} className="text-primary" />
+                      Link Google
+                    </div>
+                    <div className="mt-2 text-sm text-muted-foreground">
+                      Add a Google identity you can use for future logins.
+                    </div>
+                  </button>
+                ) : null}
+
+                {!nonWalletAccounts.some((account) => account.type === 'twitter_oauth') ? (
+                  <button
+                    onClick={() => linkTwitter()}
+                    className="rounded-2xl border border-border bg-background/70 p-4 text-left transition hover:bg-muted/40"
+                    type="button"
+                  >
+                    <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+                      <ExternalLink size={15} className="text-primary" />
+                      Link X
+                    </div>
+                    <div className="mt-2 text-sm text-muted-foreground">
+                      Attach your X account for a richer public identity profile.
+                    </div>
+                  </button>
+                ) : null}
+
+                <button
+                  onClick={() => void loadServerProfile()}
+                  className="rounded-2xl border border-border bg-background/70 p-4 text-left transition hover:bg-muted/40"
+                  type="button"
+                >
+                  <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+                    <RefreshCw size={15} className="text-primary" />
+                    Re-verify session
+                  </div>
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    Refresh the API-verified session block with a fresh Privy access token.
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => void logout()}
+                  className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-left transition hover:bg-destructive/15"
+                  type="button"
+                >
+                  <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+                    <LogOut size={15} className="text-destructive" />
+                    Sign out
+                  </div>
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    End the current Privy session and clear this browser's authenticated state.
+                  </div>
                 </button>
               </div>
             </div>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

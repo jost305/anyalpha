@@ -3,6 +3,9 @@ import app from "./app";
 import { startMarketAlertWorker } from "./lib/alerts/market-watcher";
 import { startMobulaGlobalAggregateWorker } from "./lib/markets/mobula-global";
 import { logger } from "./lib/logger";
+import { startTelegramWebhook } from "./lib/telegram/startup";
+import { startXFilteredStreamWorker } from "./lib/twitter-track/stream";
+import { startPublicWalletDiscoveryWorker } from "./lib/wallet-tracker/discovery-worker";
 
 const rawPort = process.env["PORT"];
 
@@ -25,6 +28,9 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
+  void startTelegramWebhook();
   startMarketAlertWorker();
   startMobulaGlobalAggregateWorker();
+  startXFilteredStreamWorker();
+  startPublicWalletDiscoveryWorker();
 });

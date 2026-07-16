@@ -1,231 +1,374 @@
-import { useState } from 'react';
-import { Trophy, TrendingUp, TrendingDown, Swords, Crown, Medal, Zap, Users } from 'lucide-react';
+import { useEffect, useState, type ReactNode } from 'react';
+import {
+  Activity,
+  AlertTriangle,
+  LoaderCircle,
+  RefreshCw,
+  Trophy,
+  Users,
+} from 'lucide-react';
+import {
+  fetchLeaderboard,
+  type LeaderboardPeriod,
+  type LeaderboardResponse,
+  type PointsLeaderboardRow,
+  type ReferralsLeaderboardRow,
+  type TradesLeaderboardRow,
+} from '@/lib/leaderboard';
+import { getDicebearUserAvatarUrl } from '@/lib/avatar';
 
-type Period = '24h' | '7d' | '30d' | 'all';
-type LbTab  = 'all' | 'traders' | 'agents';
+type LeaderboardTab = 'points' | 'trades' | 'referrals';
 
-interface Trader {
-  rank: number;
-  emoji: string;
-  name: string;
-  wallet: string;
-  type: 'trader' | 'agent';
-  pnl: string;
-  pnlPct: number;
-  winRate: number;
-  volume: string;
-  battles: number;
-  badge: string;
-  streak: number;
-}
-
-const TRADERS: Trader[] = [
-  { rank: 1,  emoji: '👑', name: 'CryptoWhale',   wallet: '0xF1a2...9B4C', type: 'trader', pnl: '+$284,120', pnlPct: 312.4, winRate: 78, volume: '$4.2M',  battles: 47, badge: '🏆 Legend',     streak: 14 },
-  { rank: 2,  emoji: '🤖', name: 'BullBot v3',    wallet: '0xA9e1...3D7F', type: 'agent',  pnl: '+$198,440', pnlPct: 241.1, winRate: 82, volume: '$2.8M',  battles: 92, badge: '⚡ AI Elite',   streak: 8  },
-  { rank: 3,  emoji: '🐳', name: 'DeepDiver',     wallet: '0xC4b3...8E2A', type: 'trader', pnl: '+$141,880', pnlPct: 198.7, winRate: 71, volume: '$3.1M',  battles: 31, badge: '🔥 Veteran',    streak: 5  },
-  { rank: 4,  emoji: '🦈', name: 'SharkMode',     wallet: '0x7Ea9...1C5D', type: 'trader', pnl: '+$98,330',  pnlPct: 142.2, winRate: 68, volume: '$1.9M',  battles: 24, badge: '💎 Diamond',    streak: 3  },
-  { rank: 5,  emoji: '⚡', name: 'T6Agent Pro',   wallet: '0xB2c7...4F8E', type: 'agent',  pnl: '+$76,210',  pnlPct: 118.9, winRate: 74, volume: '$1.4M',  battles: 68, badge: '🤖 Sentinel',   streak: 6  },
-  { rank: 6,  emoji: '🎯', name: 'PrecisionDegen', wallet: '0xD1f4...7A3C', type: 'trader', pnl: '+$61,540',  pnlPct: 94.1,  winRate: 63, volume: '$982K',  battles: 19, badge: '🎯 Sniper',     streak: 2  },
-  { rank: 7,  emoji: '🚀', name: 'MoonCaller',    wallet: '0x3Bc2...9E1D', type: 'trader', pnl: '+$48,780',  pnlPct: 81.3,  winRate: 59, volume: '$756K',  battles: 14, badge: '🚀 Rocketeer',  streak: 0  },
-  { rank: 8,  emoji: '🦊', name: 'FoxAI Trader',  wallet: '0x8Da5...2F6B', type: 'agent',  pnl: '+$41,120',  pnlPct: 72.8,  winRate: 67, volume: '$641K',  battles: 55, badge: '🦊 Cunning',    streak: 4  },
-  { rank: 9,  emoji: '💰', name: 'SatoshiKid',    wallet: '0xE7b1...5C9A', type: 'trader', pnl: '+$34,690',  pnlPct: 61.4,  winRate: 57, volume: '$524K',  battles: 11, badge: '💰 HODLer',     streak: 1  },
-  { rank: 10, emoji: '🌊', name: 'WaveRider',     wallet: '0x2Ac6...8D4F', type: 'trader', pnl: '+$28,840',  pnlPct: 52.1,  winRate: 54, volume: '$418K',  battles: 8,  badge: '🌊 Surfer',     streak: 0  },
-  { rank: 11, emoji: '🎲', name: 'DiceBot Alpha', wallet: '0x9Fd3...1B7E', type: 'agent',  pnl: '+$22,110',  pnlPct: 43.7,  winRate: 61, volume: '$341K',  battles: 44, badge: '🎲 Gambler',    streak: 2  },
-  { rank: 12, emoji: '🐂', name: 'BullRun99',     wallet: '0x4Ec8...6A2C', type: 'trader', pnl: '+$17,460',  pnlPct: 34.9,  winRate: 51, volume: '$287K',  battles: 6,  badge: '🐂 Bull',       streak: 0  },
-  { rank: 13, emoji: '🦅', name: 'EagleEye',      wallet: '0x6Gb1...3D9F', type: 'trader', pnl: '+$12,830',  pnlPct: 27.2,  winRate: 48, volume: '$219K',  battles: 4,  badge: '🦅 Scout',      streak: 0  },
-  { rank: 14, emoji: '🔮', name: 'OracleBot',     wallet: '0x1He4...7C5A', type: 'agent',  pnl: '+$9,420',   pnlPct: 19.8,  winRate: 55, volume: '$174K',  battles: 38, badge: '🔮 Mystic',     streak: 1  },
-  { rank: 15, emoji: '💫', name: 'StarTrader',    wallet: '0x5Ja7...2B8D', type: 'trader', pnl: '+$6,110',   pnlPct: 13.1,  winRate: 44, volume: '$132K',  battles: 3,  badge: '💫 Rising',     streak: 0  },
+const PERIODS: Array<{ id: LeaderboardPeriod; label: string }> = [
+  { id: '24h', label: '24H' },
+  { id: '7d', label: '7D' },
+  { id: '30d', label: '30D' },
+  { id: 'all', label: 'All' },
 ];
 
-const PERIOD_LABELS: Record<Period, string> = { '24h': '24H', '7d': '7 Days', '30d': '30 Days', all: 'All Time' };
+const TABS: Array<{ id: LeaderboardTab; label: string; description: string; icon: ReactNode }> = [
+  { id: 'points', label: 'Points', description: 'Alpha Points earned by real accounts.', icon: <Trophy size={13} /> },
+  { id: 'trades', label: 'Trades', description: 'Tracked wallet trade events observed by Watcher.', icon: <Activity size={13} /> },
+  { id: 'referrals', label: 'Referrals', description: 'Referral network growth and passive points.', icon: <Users size={13} /> },
+];
 
-function RankBadge({ rank }: { rank: number }) {
-  if (rank === 1) return <span className="text-yellow-400 font-black text-sm flex items-center gap-0.5"><Crown size={14} /> 1</span>;
-  if (rank === 2) return <span className="text-gray-300 font-black text-sm flex items-center gap-0.5"><Medal size={14} /> 2</span>;
-  if (rank === 3) return <span className="text-amber-600 font-black text-sm flex items-center gap-0.5"><Medal size={14} /> 3</span>;
-  return <span className="text-muted-foreground font-mono tabular-nums text-xs">{rank}</span>;
+function formatNumber(value: number | null | undefined): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return '0';
+  return new Intl.NumberFormat('en-US').format(value);
 }
 
-function PodiumCard({ trader, pos }: { trader: Trader; pos: 1 | 2 | 3 }) {
-  const heights   = { 1: 'h-28', 2: 'h-20', 3: 'h-16' };
-  const orders    = { 1: 'order-2', 2: 'order-1', 3: 'order-3' };
-  const borders   = { 1: 'border-yellow-400/50 bg-yellow-400/5', 2: 'border-gray-400/30 bg-gray-400/5', 3: 'border-amber-600/30 bg-amber-600/5' };
-  const crowns    = { 1: '👑', 2: '🥈', 3: '🥉' };
+function formatUsdCents(value: number | null | undefined): string {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return 'n/a';
+
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    notation: value >= 100_000_000 ? 'compact' : 'standard',
+    maximumFractionDigits: value >= 100_000_000 ? 2 : 0,
+  }).format(value / 100);
+}
+
+function formatDateTime(value: string | null): string {
+  if (!value) return 'No activity yet';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Unknown';
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(date);
+}
+
+function rankAccent(rank: number) {
+  if (rank === 1) return 'text-primary';
+  if (rank === 2) return 'text-foreground';
+  if (rank === 3) return 'text-orange-300';
+  return 'text-muted-foreground';
+}
+
+function rankEmoji(rank: number) {
+  if (rank === 1) return '🥇';
+  if (rank === 2) return '🥈';
+  if (rank === 3) return '🥉';
+  return null;
+}
+
+function RankCell({ rank }: { rank: number }) {
+  const emoji = rankEmoji(rank);
 
   return (
-    <div className={`flex flex-col items-center gap-1 ${orders[pos]}`}>
-      <div className={`w-full max-w-[140px] border rounded-lg p-3 flex flex-col items-center gap-1 ${borders[pos]}`}>
-        <div className="text-3xl leading-none">{trader.emoji}</div>
-        <div className="text-xs font-bold text-foreground truncate">{trader.name}</div>
-        <div className="text-[10px] text-muted-foreground font-mono">{trader.wallet}</div>
-        <div className="text-sm font-black text-green-400">{trader.pnl}</div>
-        <div className="text-[10px] text-muted-foreground">+{trader.pnlPct}% ROI</div>
-        <div className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{trader.badge}</div>
-      </div>
-      <div className={`w-24 rounded-t-sm flex items-end justify-center pb-1 text-lg ${heights[pos]} ${
-        pos === 1 ? 'bg-yellow-400/20' : pos === 2 ? 'bg-gray-400/15' : 'bg-amber-600/15'
-      }`}>
-        {crowns[pos]}
+    <span className={`inline-flex min-w-10 items-center gap-1.5 font-mono text-xs font-black ${rankAccent(rank)}`}>
+      {emoji ? <span className="text-base leading-none">{emoji}</span> : <span className="text-[10px] text-muted-foreground">#</span>}
+      <span>{rank}</span>
+    </span>
+  );
+}
+
+function AccountCell({ row }: { row: { display: string; accountKey: string; tierLabel: string; referralCode: string | null } }) {
+  const avatarUrl = getDicebearUserAvatarUrl(row.accountKey || row.referralCode || row.display);
+
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <img
+        src={avatarUrl}
+        alt=""
+        className="h-7 w-7 shrink-0 rounded-full bg-background object-cover ring-1 ring-primary/20"
+        loading="lazy"
+      />
+      <div className="min-w-0">
+        <div className="truncate text-xs font-black text-foreground">{row.display}</div>
+        <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[10px] text-muted-foreground">
+          <span className="shrink-0 rounded-md bg-muted/45 px-1.5 py-0.5 font-bold uppercase tracking-[0.16em]">
+            {row.tierLabel}
+          </span>
+          <span className="truncate font-mono">{row.referralCode ? `ref:${row.referralCode}` : `acct:${row.accountKey}`}</span>
+        </div>
       </div>
     </div>
   );
 }
 
-export default function LeaderboardPage() {
-  const [period, setPeriod] = useState<Period>('7d');
-  const [tab, setTab]       = useState<LbTab>('all');
-
-  const visible = TRADERS.filter(t =>
-    tab === 'all' ? true : tab === 'traders' ? t.type === 'trader' : t.type === 'agent'
+function Metric({ label, value, sub }: { label: string; value: string; sub: string }) {
+  return (
+    <div className="min-w-0 rounded-md bg-background/55 px-2 py-1.5">
+      <div className="flex min-w-0 items-baseline gap-1.5">
+        <div className="truncate text-[8px] font-black uppercase tracking-[0.08em] text-muted-foreground md:text-[9px] md:tracking-[0.14em]">{label}</div>
+        <div className="shrink-0 font-mono text-sm font-black leading-none text-foreground md:text-base">{value}</div>
+      </div>
+      <div className="mt-0.5 truncate text-[9px] leading-tight text-muted-foreground">{sub}</div>
+    </div>
   );
+}
 
-  const top3    = visible.slice(0, 3);
-  const rest    = visible.slice(3);
+function EmptyState({ tab }: { tab: LeaderboardTab }) {
+  const copy = {
+    points: 'No Alpha Points have been ranked for this period yet.',
+    trades: 'No tracked wallet trade events are available for this period yet.',
+    referrals: 'No referral activity has been ranked for this period yet.',
+  } satisfies Record<LeaderboardTab, string>;
 
   return (
-    <div className="h-full flex flex-col bg-background overflow-hidden">
+    <div className="bg-card/50 px-4 py-8 text-center">
+      <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-md bg-background text-primary">
+        <Trophy size={16} />
+      </div>
+      <div className="mt-3 text-sm font-black text-foreground">Real data only</div>
+      <div className="mx-auto mt-1 max-w-md text-xs text-muted-foreground">{copy[tab]}</div>
+    </div>
+  );
+}
 
-      {/* Header */}
-      <div className="shrink-0 px-4 py-3 border-b border-border flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <Trophy size={16} className="text-yellow-400" />
-          <span className="font-bold text-sm">Leaderboard</span>
-          <span className="text-[10px] text-muted-foreground px-2 py-0.5 border border-border rounded">LIVE</span>
-        </div>
-        <div className="flex items-center gap-1">
-          {(['24h', '7d', '30d', 'all'] as Period[]).map(p => (
-            <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className={`text-xs px-2.5 py-1 rounded border transition ${
-                period === p
-                  ? 'bg-primary/10 border-primary text-primary font-bold'
-                  : 'border-border text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {PERIOD_LABELS[p]}
-            </button>
+function PointsTable({ rows }: { rows: PointsLeaderboardRow[] }) {
+  if (rows.length === 0) return <EmptyState tab="points" />;
+
+  return (
+    <div className="overflow-x-auto bg-card/70">
+      <table className="w-full min-w-[720px] text-xs">
+        <thead className="bg-background/75 text-left text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          <tr>
+            <th className="w-16 px-3 py-2 font-black">Rank</th>
+            <th className="px-3 py-2 font-black">Account</th>
+            <th className="px-3 py-2 text-right font-black">Period Points</th>
+            <th className="px-3 py-2 text-right font-black">Lifetime</th>
+            <th className="px-3 py-2 text-right font-black">Entries</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.accountKey} className="shadow-[inset_0_-1px_0_rgba(148,163,184,0.12)] transition last:shadow-none hover:bg-muted/25">
+              <td className="px-3 py-2.5"><RankCell rank={row.rank} /></td>
+              <td className="px-3 py-2.5"><AccountCell row={row} /></td>
+              <td className="px-3 py-2.5 text-right font-mono text-sm font-black text-primary">{formatNumber(row.points)}</td>
+              <td className="px-3 py-2.5 text-right font-mono text-muted-foreground">{formatNumber(row.lifetimePoints)}</td>
+              <td className="px-3 py-2.5 text-right font-mono text-muted-foreground">{row.ledgerEntries === null ? 'All' : formatNumber(row.ledgerEntries)}</td>
+            </tr>
           ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function TradesTable({ rows }: { rows: TradesLeaderboardRow[] }) {
+  if (rows.length === 0) return <EmptyState tab="trades" />;
+
+  return (
+    <div className="overflow-x-auto bg-card/70">
+      <table className="w-full min-w-[760px] text-xs">
+        <thead className="bg-background/75 text-left text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          <tr>
+            <th className="w-16 px-3 py-2 font-black">Rank</th>
+            <th className="px-3 py-2 font-black">Account</th>
+            <th className="px-3 py-2 text-right font-black">Trades</th>
+            <th className="px-3 py-2 text-right font-black">Buy / Sell</th>
+            <th className="px-3 py-2 text-right font-black">Volume</th>
+            <th className="px-3 py-2 text-right font-black">Last Seen</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.accountKey} className="shadow-[inset_0_-1px_0_rgba(148,163,184,0.12)] transition last:shadow-none hover:bg-muted/25">
+              <td className="px-3 py-2.5"><RankCell rank={row.rank} /></td>
+              <td className="px-3 py-2.5"><AccountCell row={row} /></td>
+              <td className="px-3 py-2.5 text-right font-mono text-sm font-black text-primary">{formatNumber(row.tradeCount)}</td>
+              <td className="px-3 py-2.5 text-right font-mono text-muted-foreground">
+                <span className="text-success">{formatNumber(row.buyCount)}</span>
+                <span className="px-1 text-muted-foreground">/</span>
+                <span className="text-red-400">{formatNumber(row.sellCount)}</span>
+              </td>
+              <td className="px-3 py-2.5 text-right font-mono text-muted-foreground">{formatUsdCents(row.volumeUsdCents)}</td>
+              <td className="px-3 py-2.5 text-right font-mono text-muted-foreground">{formatDateTime(row.lastActivityAt)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function ReferralsTable({ rows }: { rows: ReferralsLeaderboardRow[] }) {
+  if (rows.length === 0) return <EmptyState tab="referrals" />;
+
+  return (
+    <div className="overflow-x-auto bg-card/70">
+      <table className="w-full min-w-[720px] text-xs">
+        <thead className="bg-background/75 text-left text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          <tr>
+            <th className="w-16 px-3 py-2 font-black">Rank</th>
+            <th className="px-3 py-2 font-black">Account</th>
+            <th className="px-3 py-2 text-right font-black">Referrals</th>
+            <th className="px-3 py-2 text-right font-black">Active</th>
+            <th className="px-3 py-2 text-right font-black">Passive Points</th>
+            <th className="px-3 py-2 text-right font-black">Latest</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.accountKey} className="shadow-[inset_0_-1px_0_rgba(148,163,184,0.12)] transition last:shadow-none hover:bg-muted/25">
+              <td className="px-3 py-2.5"><RankCell rank={row.rank} /></td>
+              <td className="px-3 py-2.5"><AccountCell row={row} /></td>
+              <td className="px-3 py-2.5 text-right font-mono text-sm font-black text-primary">{formatNumber(row.referralCount)}</td>
+              <td className="px-3 py-2.5 text-right font-mono text-success">{formatNumber(row.activeReferralCount)}</td>
+              <td className="px-3 py-2.5 text-right font-mono text-muted-foreground">{formatNumber(row.passivePoints)}</td>
+              <td className="px-3 py-2.5 text-right font-mono text-muted-foreground">{formatDateTime(row.joinedAt)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export default function LeaderboardPage() {
+  const [period, setPeriod] = useState<LeaderboardPeriod>('7d');
+  const [tab, setTab] = useState<LeaderboardTab>('points');
+  const [snapshot, setSnapshot] = useState<LeaderboardResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshTick, setRefreshTick] = useState(0);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setError(null);
+
+    fetchLeaderboard(period, controller.signal)
+      .then((response) => setSnapshot(response))
+      .catch((err: unknown) => {
+        if (controller.signal.aborted) return;
+        setError(err instanceof Error ? err.message : 'Failed to load leaderboard.');
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [period, refreshTick]);
+
+  const body = () => {
+    if (loading && !snapshot) {
+      return (
+        <div className="flex min-h-[260px] items-center justify-center bg-card/60 text-sm text-muted-foreground">
+          <LoaderCircle className="mr-2 animate-spin text-primary" size={16} />
+          Loading live rankings...
         </div>
-      </div>
+      );
+    }
 
-      {/* Tabs */}
-      <div className="shrink-0 flex items-center border-b border-border px-4 gap-0">
-        {[
-          { key: 'all',     label: 'All',        icon: <Users size={11} />     },
-          { key: 'traders', label: 'Traders',    icon: <TrendingUp size={11} /> },
-          { key: 'agents',  label: 'AI Agents',  icon: <Zap size={11} />       },
-        ].map(t => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key as LbTab)}
-            className={`flex items-center gap-1.5 text-xs px-3 py-2 border-b-2 transition ${
-              tab === t.key
-                ? 'border-primary text-foreground font-bold'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {t.icon}{t.label}
-          </button>
-        ))}
-
-        <div className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground py-2">
-          <Swords size={11} />
-          <span>{TRADERS.reduce((s, t) => s + t.battles, 0).toLocaleString()} battles fought</span>
+    if (error) {
+      return (
+        <div className="border border-destructive/40 bg-destructive/10 px-4 py-4 text-sm text-destructive">
+          <div className="flex items-center gap-2 font-black">
+            <AlertTriangle size={15} />
+            Leaderboard unavailable
+          </div>
+          <div className="mt-1 text-xs text-destructive/85">{error}</div>
         </div>
-      </div>
+      );
+    }
 
-      {/* Body */}
-      <div className="flex-1 overflow-y-auto">
+    if (!snapshot) return <EmptyState tab={tab} />;
 
-        {/* Podium */}
-        {top3.length >= 3 && (
-          <div className="px-4 py-4 border-b border-border bg-muted/20">
-            <div className="flex items-end justify-center gap-3">
-              <PodiumCard trader={top3[1]} pos={2} />
-              <PodiumCard trader={top3[0]} pos={1} />
-              <PodiumCard trader={top3[2]} pos={3} />
+    if (tab === 'trades') return <TradesTable rows={snapshot.trades} />;
+    if (tab === 'referrals') return <ReferralsTable rows={snapshot.referrals} />;
+    return <PointsTable rows={snapshot.points} />;
+  };
+
+  return (
+    <div className="h-full overflow-y-auto bg-background">
+      <div className="mx-auto flex max-w-7xl flex-col gap-2 p-2 md:p-3">
+        <section className="rounded-md bg-card/75 px-2 py-2">
+          <div className="flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
+            <div className="grid grid-cols-3 gap-1.5 xl:min-w-[520px] xl:max-w-[620px] xl:flex-1">
+              <Metric
+                label="Point Accounts"
+                value={formatNumber(snapshot?.summary.pointAccounts ?? 0)}
+                sub={`${formatNumber(snapshot?.summary.topPoints ?? 0)} top score`}
+              />
+              <Metric
+                label="Trade Events"
+                value={formatNumber(snapshot?.summary.trackedTradeEvents ?? 0)}
+                sub={`${formatNumber(snapshot?.summary.trackedTradeAccounts ?? 0)} ranked accounts`}
+              />
+              <Metric
+                label="Referrals"
+                value={formatNumber(snapshot?.summary.totalReferrals ?? 0)}
+                sub={`${formatNumber(snapshot?.summary.referralAccounts ?? 0)} builders ranked`}
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-1.5 xl:justify-end">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {TABS.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setTab(item.id)}
+                    className={`tap-feedback inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-black transition ${
+                      tab === item.id
+                        ? 'bg-primary/10 text-primary'
+                        : 'bg-background/70 text-muted-foreground hover:bg-muted/35 hover:text-foreground'
+                    }`}
+                  >
+                    {item.icon}
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex flex-wrap items-center gap-1">
+              {PERIODS.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setPeriod(item.id)}
+                  className={`tap-feedback rounded-md px-2.5 py-1.5 text-xs font-black transition ${
+                    period === item.id
+                      ? 'bg-primary/10 text-primary'
+                      : 'bg-background/70 text-muted-foreground hover:bg-muted/35 hover:text-foreground'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setRefreshTick((tick) => tick + 1)}
+                disabled={loading}
+                className="tap-feedback inline-flex items-center gap-1.5 rounded-md bg-background/70 px-2.5 py-1.5 text-xs font-black text-muted-foreground transition hover:bg-muted/35 hover:text-foreground disabled:opacity-60"
+              >
+                <RefreshCw size={12} className={loading ? 'animate-spin text-primary' : ''} />
+                Refresh
+              </button>
+              </div>
             </div>
           </div>
-        )}
+        </section>
 
-        {/* Table — ranks 4+ */}
-        <table className="w-full text-xs border-collapse min-w-[700px]">
-          <thead className="sticky top-0 bg-background border-b border-border z-10">
-            <tr className="text-muted-foreground text-left">
-              <th className="px-4 py-2 font-medium w-10">#</th>
-              <th className="px-3 py-2 font-medium">Trader / Agent</th>
-              <th className="px-3 py-2 font-medium text-right">P&amp;L</th>
-              <th className="px-3 py-2 font-medium text-right">ROI</th>
-              <th className="px-3 py-2 font-medium text-right">Win Rate</th>
-              <th className="px-3 py-2 font-medium text-right">Volume</th>
-              <th className="px-3 py-2 font-medium text-right">Battles</th>
-              <th className="px-3 py-2 font-medium text-right">Streak</th>
-              <th className="px-3 py-2 font-medium">Badge</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rest.map(t => (
-              <tr key={t.rank} className="border-b border-border/40 hover:bg-muted/30 cursor-pointer transition">
-                <td className="px-4 py-2.5"><RankBadge rank={t.rank} /></td>
-                <td className="px-3 py-2.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg leading-none">{t.emoji}</span>
-                    <div>
-                      <div className="font-bold text-foreground flex items-center gap-1">
-                        {t.name}
-                        {t.type === 'agent' && (
-                          <span className="text-[8px] font-semibold px-1 py-0.5 rounded bg-purple-500/20 text-purple-400">AI</span>
-                        )}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground font-mono">{t.wallet}</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-3 py-2.5 text-right font-bold text-green-400 font-mono">{t.pnl}</td>
-                <td className="px-3 py-2.5 text-right">
-                  <span className="text-green-400 font-mono">+{t.pnlPct}%</span>
-                </td>
-                <td className="px-3 py-2.5 text-right">
-                  <div className="flex items-center justify-end gap-1.5">
-                    <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full"
-                        style={{ width: `${t.winRate}%`, backgroundColor: t.winRate >= 70 ? '#22c55e' : t.winRate >= 55 ? '#eab308' : '#ef4444' }}
-                      />
-                    </div>
-                    <span className={`font-mono ${t.winRate >= 70 ? 'text-green-400' : t.winRate >= 55 ? 'text-yellow-400' : 'text-red-400'}`}>
-                      {t.winRate}%
-                    </span>
-                  </div>
-                </td>
-                <td className="px-3 py-2.5 text-right font-mono text-muted-foreground">{t.volume}</td>
-                <td className="px-3 py-2.5 text-right font-mono text-muted-foreground">{t.battles}</td>
-                <td className="px-3 py-2.5 text-right">
-                  {t.streak > 0 ? (
-                    <span className="flex items-center justify-end gap-0.5 text-orange-400 font-bold">
-                      🔥 {t.streak}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
-                </td>
-                <td className="px-3 py-2.5">
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground whitespace-nowrap">{t.badge}</span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Footer */}
-      <div className="shrink-0 border-t border-border px-4 py-1.5 flex items-center justify-between text-xs text-muted-foreground bg-background">
-        <span>{visible.length} participants · updated live</span>
-        <div className="flex items-center gap-1">
-          <TrendingUp size={10} className="text-green-400" />
-          <span>Top performer: <span className="text-foreground font-bold">+312.4% ROI</span> this period</span>
-        </div>
+        <section className="rounded-md bg-card/75">
+          <div className="p-2 md:p-3">{body()}</div>
+        </section>
       </div>
     </div>
   );

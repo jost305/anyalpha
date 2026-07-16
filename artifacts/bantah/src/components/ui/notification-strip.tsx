@@ -13,8 +13,8 @@ interface NotificationStripProps {
 
 const variantStyles = {
   info: 'bg-primary/10 border-primary/20 text-foreground',
-  warning: 'bg-yellow-500/10 border-yellow-500/20 text-yellow-200',
-  success: 'bg-secondary/10 border-secondary/20 text-secondary',
+  warning: 'bg-yellow-500/10 border-yellow-500/20 text-yellow-700 dark:text-yellow-200',
+  success: 'bg-success/10 border-success/20 text-success',
   promo: 'bg-accent/10 border-accent/20 text-foreground',
 };
 

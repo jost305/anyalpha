@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { Chip } from '@/components/common/chips';
 import { SignalsSkeleton } from '@/components/common/skeletons';
 import { EmptySignals } from '@/components/common/empty-states';
-import { fetchMarketSignals, fmtCompact, fmtPct, marketPairLabel, type MarketSignal } from '@/lib/market-data';
+import { fetchMarketSignals, fmtCompact, fmtPct, marketPairLabel, marketTokenPath, type MarketSignal } from '@/lib/market-data';
 
 const RETRY_DELAY_MS = 4000;
 
@@ -46,7 +46,7 @@ export default function SignalsSection() {
       <div className="border-b border-border bg-background px-2 py-1.5 flex items-center justify-between shrink-0">
         <div>
           <div className="text-sm font-bold text-foreground">TOP SIGNALS</div>
-          <div className="text-xs text-muted-foreground">Ranked from live DexScreener market data</div>
+          <div className="text-xs text-muted-foreground">Ranked from live AnyAlpha market data</div>
         </div>
         <button
           onClick={() => setRefreshTick((tick) => tick + 1)}
@@ -61,9 +61,7 @@ export default function SignalsSection() {
         {signals.map((signal) => (
           <a
             key={signal.id}
-            href={signal.token.url}
-            target="_blank"
-            rel="noopener noreferrer"
+            href={marketTokenPath(signal.token)}
             className="block bg-muted/30 border border-border/50 rounded px-2 py-1.5 hover:border-accent hover:bg-muted/50 transition group"
           >
             <div className="flex items-start justify-between gap-1.5 mb-0.5">
@@ -77,7 +75,7 @@ export default function SignalsSection() {
                 )}
                 <div className="text-sm font-bold text-foreground truncate">{marketPairLabel(signal.token)}</div>
                 <span className={`text-xs font-bold ${
-                  signal.sentiment === 'Bullish' ? 'text-secondary' : signal.sentiment === 'Bearish' ? 'text-destructive' : 'text-muted-foreground'
+                  signal.sentiment === 'Bullish' ? 'text-success' : signal.sentiment === 'Bearish' ? 'text-destructive' : 'text-muted-foreground'
                 }`}>
                   {signal.sentiment}
                 </span>

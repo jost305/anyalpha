@@ -19,7 +19,7 @@ export function ChartSkeleton() {
         <Skeleton className="h-3 w-20" />
       </div>
       <div className="flex gap-1 mt-1">
-        {['1m','5m','15m','1h','4h','1D'].map(tf => (
+        {['5s','10s','1m','5m','15m','1h','4h'].map(tf => (
           <Skeleton key={tf} className="h-5 w-7" />
         ))}
       </div>

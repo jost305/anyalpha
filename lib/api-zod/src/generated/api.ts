@@ -163,6 +163,8 @@ export const CreateAlertPreviewResponse = zod.object({
 export const listMarketsQuerySortDefault = `trending`;
 export const listMarketsQueryLimitDefault = 100;
 export const listMarketsQueryLimitMax = 100;
+export const listMarketsQueryEnrichDefault = true;
+export const listMarketsQueryAllDefault = false;
 
 export const ListMarketsQueryParams = zod.object({
   chain: zod.coerce.string().optional(),
@@ -175,6 +177,8 @@ export const ListMarketsQueryParams = zod.object({
     .min(1)
     .max(listMarketsQueryLimitMax)
     .default(listMarketsQueryLimitDefault),
+  enrich: zod.coerce.boolean().default(listMarketsQueryEnrichDefault),
+  all: zod.coerce.boolean().default(listMarketsQueryAllDefault),
 });
 
 export const listMarketsResponseTotalMin = 0;
@@ -252,6 +256,7 @@ export const ListMarketsResponse = zod.object({
             "helius",
             "moralis",
             "alchemy",
+            "bitquery",
           ]),
           status: zod.enum(["live", "demo", "missing_key", "skipped", "error"]),
           label: zod.string(),
@@ -288,6 +293,7 @@ export const ListMarketsResponse = zod.object({
         "helius",
         "moralis",
         "alchemy",
+        "bitquery",
       ]),
       status: zod.enum(["live", "demo", "missing_key", "skipped", "error"]),
       label: zod.string(),
@@ -388,6 +394,7 @@ export const ListMarketSignalsResponse = zod.object({
               "helius",
               "moralis",
               "alchemy",
+              "bitquery",
             ]),
             status: zod.enum([
               "live",
@@ -434,6 +441,7 @@ export const ListMarketSignalsResponse = zod.object({
         "helius",
         "moralis",
         "alchemy",
+        "bitquery",
       ]),
       status: zod.enum(["live", "demo", "missing_key", "skipped", "error"]),
       label: zod.string(),
@@ -527,6 +535,7 @@ export const GetMarketTokenResponse = zod.object({
           "helius",
           "moralis",
           "alchemy",
+          "bitquery",
         ]),
         status: zod.enum(["live", "demo", "missing_key", "skipped", "error"]),
         label: zod.string(),
@@ -622,6 +631,7 @@ export const GetMarketTokenResponse = zod.object({
             "helius",
             "moralis",
             "alchemy",
+            "bitquery",
           ]),
           status: zod.enum(["live", "demo", "missing_key", "skipped", "error"]),
           label: zod.string(),
@@ -725,6 +735,7 @@ export const GetMarketTokenResponse = zod.object({
         "helius",
         "moralis",
         "alchemy",
+        "bitquery",
       ]),
       status: zod.enum(["live", "demo", "missing_key", "skipped", "error"]),
       label: zod.string(),

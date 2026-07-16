@@ -178,6 +178,7 @@ export const MarketProviderSnapshotProvider = {
   helius: "helius",
   moralis: "moralis",
   alchemy: "alchemy",
+  bitquery: "bitquery",
 } as const;
 
 export type MarketProviderSnapshotStatus =
@@ -390,6 +391,10 @@ export type ListMarketsParams = {
    * @maximum 100
    */
   limit?: number;
+  /** Set false for lightweight DexScreener-only list responses. */
+  enrich?: boolean;
+  /** Return all available rows instead of applying the limit. */
+  all?: boolean;
 };
 
 export type ListMarketsSort =

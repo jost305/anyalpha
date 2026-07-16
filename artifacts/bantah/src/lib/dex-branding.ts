@@ -20,6 +20,30 @@ const DEX_BRANDS: Record<string, DexBrand> = {
     label: 'PancakeSwap',
     logoUrl: 'https://pancakeswap.finance/logo.png',
   },
+  stonfi: {
+    label: 'STON.fi',
+    logoUrl: 'https://app.ston.fi/favicon.ico',
+  },
+  camelot: {
+    label: 'Camelot',
+    logoUrl: 'https://app.camelot.exchange/favicon.ico',
+  },
+  traderjoe: {
+    label: 'Trader Joe',
+    logoUrl: 'https://traderjoexyz.com/favicon.ico',
+  },
+  raydium: {
+    label: 'Raydium',
+    logoUrl: 'https://raydium.io/favicon.ico',
+  },
+  quickswap: {
+    label: 'QuickSwap',
+    logoUrl: 'https://quickswap.exchange/favicon.ico',
+  },
+  sushiswap: {
+    label: 'Sushi',
+    logoUrl: 'https://www.sushi.com/favicon.ico',
+  },
   meteora: {
     label: 'Meteora',
     logoUrl: 'https://www.meteora.ag/icons/v2.svg',

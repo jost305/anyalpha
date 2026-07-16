@@ -4,8 +4,10 @@ WORKDIR /app
 
 ARG BASE_PATH=/
 ARG VITE_API_BASE_URL
+ARG VITE_PRIVY_APP_ID
 ENV BASE_PATH=$BASE_PATH
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV VITE_PRIVY_APP_ID=$VITE_PRIVY_APP_ID
 
 # Keep the image predictable for native dependency installs.
 RUN apt-get update \

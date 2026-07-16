@@ -6,7 +6,10 @@
   "scripts": {
     "preinstall": "node ./scripts/enforce-package-manager.mjs",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
+    "dev": "pnpm --filter @workspace/api-server --filter @workspace/bantah --parallel run dev",
+    "vercel:build": "corepack pnpm --filter @workspace/api-server run build && corepack pnpm --filter @workspace/bantah run build",
     "start": "node ./scripts/railway-start.mjs",
+    "sync:production-integrations": "node ./scripts/sync-production-integrations.mjs",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
   },

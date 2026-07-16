@@ -1,22 +1,44 @@
 import type {
   MarketDetailResponse,
   MarketListResponse,
+  MarketOhlcvCandle,
   MarketSignal,
   MarketSignalsResponse,
   MarketToken,
+  MarketTokenHolderPosition,
   MarketTokenLink,
+  MarketTokenOrder,
+  MarketTokenTrade,
   MarketTxnStats,
 } from "./types";
 import { enrichMarkets } from "./enrichment";
+import { fillMarketDetailWithGeckoTerminal } from "./geckoterminal";
 import { getMobulaGlobalAggregates } from "./mobula-global";
-import { fetchMobulaHolderPositions, fetchMobulaTokenTrades } from "./mobula";
+import {
+  fetchMobulaBestOhlcv,
+  fetchMobulaHolderPositions,
+  fetchMobulaTokenTrades,
+  getMobulaMarketDetail,
+} from "./mobula";
+import { fetchMoralisHolderPositions, fillMarketDetailWithMoralis } from "./moralis";
+import { getLaunchpadMarketDetailFallback } from "./launchpad-pulse";
+import { DEX_PROVIDER, anyAlphaTokenUrl, withDexProvider } from "./provider-utils";
+import { fetchSolanaHolderPositions, fetchSolanaRecentPoolTrades, type SolanaHolderPositionsResult } from "./helius";
+import { fetchAlchemyPoolTrades } from "./alchemy";
+import { fetchBlockscoutHolderPositions } from "./blockscout";
+import { attachBundleAnalysesToTokens } from "../bundle-detection/store";
+import { scheduleBundleAnalysisForMarkets } from "../bundle-detection/live-analyzer";
+import { scheduleBundleExitMonitor } from "../bundle-detection/exit-monitor";
+import { snapshotHolderPnlFromDetail } from "../bundle-detection/holder-pnl";
+import { cacheNumberEnv, cachedJson, writeCachedJson } from "../cache/redis-cache";
 
 const DEXSCREENER_BASE_URL = "https://api.dexscreener.com";
 const DEFAULT_LIMIT = 100;
 const MAX_LIST_LIMIT = 100;
 const MAX_BATCH_SIZE = 30;
 const SEARCH_CONCURRENCY = 3;
-const MARKET_UNIVERSE_CACHE_TTL_MS = 45_000;
+const MARKET_UNIVERSE_CACHE_TTL_MS = 120_000;
+const DETAIL_LAST_GOOD_TTL_MS = 120_000;
 
 interface DexToken {
   address?: string;
@@ -34,6 +56,14 @@ interface DexPairStats {
 interface DexTxnBucket {
   buys?: number;
   sells?: number;
+}
+
+interface DexOrder {
+  type?: string;
+  status?: string;
+  paymentTimestamp?: number;
+  createdAt?: number;
+  date?: string;
 }
 
 interface DexPair {
@@ -120,6 +150,71 @@ let cachedMarketUniverse:
     }
   | null = null;
 let pendingMarketUniverse: Promise<MarketToken[]> | null = null;
+const detailLastGoodCache = new Map<string, { detail: MarketDetailResponse; expiresAt: number }>();
+
+function marketListCacheTtlMs(query: MarketQuery): number {
+  if (query.q?.trim()) return cacheNumberEnv("MARKET_SEARCH_CACHE_TTL_MS", 15_000, 1_000, 120_000);
+  if (query.enrich === false) return cacheNumberEnv("MARKET_LIST_LIGHT_CACHE_TTL_MS", 20_000, 1_000, 120_000);
+  return cacheNumberEnv("MARKET_LIST_CACHE_TTL_MS", 12_000, 1_000, 120_000);
+}
+
+function marketListStaleTtlMs(query: MarketQuery): number {
+  if (query.q?.trim()) return cacheNumberEnv("MARKET_SEARCH_STALE_CACHE_TTL_MS", 120_000, 5_000, 600_000);
+  if (query.enrich === false) return cacheNumberEnv("MARKET_LIST_LIGHT_STALE_CACHE_TTL_MS", 300_000, 5_000, 900_000);
+  return cacheNumberEnv("MARKET_LIST_STALE_CACHE_TTL_MS", 180_000, 5_000, 900_000);
+}
+
+function marketDetailCacheTtlMs(): number {
+  return cacheNumberEnv("MARKET_DETAIL_CACHE_TTL_MS", 6_000, 1_000, 60_000);
+}
+
+function marketDetailStaleTtlMs(): number {
+  return cacheNumberEnv("MARKET_DETAIL_STALE_CACHE_TTL_MS", 120_000, 10_000, 600_000);
+}
+
+function detailProviderTimeoutMs(): number {
+  return cacheNumberEnv("MARKET_DETAIL_PROVIDER_TIMEOUT_MS", 1_800, 750, 20_000);
+}
+
+function dexScreenerTimeoutMs(): number {
+  return cacheNumberEnv("DEXSCREENER_TIMEOUT_MS", 6_000, 1_000, 20_000);
+}
+
+function stableJson(value: Record<string, unknown>): string {
+  return JSON.stringify(
+    Object.entries(value)
+      .filter(([, item]) => item !== undefined && item !== "")
+      .sort(([left], [right]) => left.localeCompare(right)),
+  );
+}
+
+function marketListCacheKey(query: MarketQuery): string {
+  return `markets:list:${stableJson({
+    all: query.all === true,
+    chain: query.chain?.trim().toLowerCase() || "all",
+    enrich: query.enrich !== false,
+    limit: query.limit ?? DEFAULT_LIMIT,
+    q: query.q?.trim().toLowerCase(),
+    sort: query.sort ?? "trending",
+  })}`;
+}
+
+function marketDetailCacheKey(chainId: string, tokenAddress: string): string {
+  return `markets:detail:${chainId.trim().toLowerCase()}:${tokenAddress.trim().toLowerCase()}`;
+}
+
+async function withDetailBudget<T>(load: Promise<T>, fallback: T): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<T>((resolve) => {
+    timeoutId = setTimeout(() => resolve(fallback), detailProviderTimeoutMs());
+  });
+
+  try {
+    return await Promise.race([load.catch(() => fallback), timeout]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
 
 const chainLabels: Record<string, string> = {
   solana: "Solana",
@@ -131,6 +226,7 @@ const chainLabels: Record<string, string> = {
   avalanche: "Avalanche",
   optimism: "Optimism",
   ton: "TON",
+  robinhood: "Robinhood",
 };
 
 function asArray<T>(value: unknown): T[] {
@@ -147,7 +243,7 @@ async function fetchJson<T>(path: string): Promise<T> {
       accept: "application/json",
       "user-agent": "AnyAlphaTerminal/0.1",
     },
-    signal: AbortSignal.timeout(12_000),
+    signal: AbortSignal.timeout(dexScreenerTimeoutMs()),
   });
 
   if (!response.ok) {
@@ -155,6 +251,41 @@ async function fetchJson<T>(path: string): Promise<T> {
   }
 
   return (await response.json()) as T;
+}
+
+function timestampMillis(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value < 10_000_000_000 ? value * 1000 : value;
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    const numericValue = Number(value);
+    if (Number.isFinite(numericValue)) return timestampMillis(numericValue);
+    const parsed = Date.parse(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+
+  return undefined;
+}
+
+function normalizeDexOrder(order: DexOrder, index: number): MarketTokenOrder {
+  const paymentTimestamp = timestampMillis(order.paymentTimestamp);
+  const createdAt = timestampMillis(order.createdAt ?? order.date);
+
+  return {
+    id: `dex-order-${order.type ?? "order"}-${order.status ?? "unknown"}-${paymentTimestamp ?? createdAt ?? index}`,
+    type: order.type,
+    status: order.status,
+    paymentTimestamp,
+    createdAt,
+    source: "dexscreener",
+  };
+}
+
+async function fetchDexOrders(chainId: string, tokenAddress: string): Promise<MarketTokenOrder[]> {
+  return fetchJson<unknown>(`/orders/v1/${encodeURIComponent(chainId)}/${encodeURIComponent(tokenAddress)}`)
+    .then((rows) => asArray<DexOrder>(rows).map(normalizeDexOrder))
+    .catch(() => []);
 }
 
 function numberFromString(value?: string): number | undefined {
@@ -275,7 +406,7 @@ function normalizePair(pair: DexPair, candidate?: Candidate): MarketToken | null
   const token = pairToken(pair, candidate);
   const pairAddress = pair.pairAddress;
 
-  if (!chainId || !token?.address || !token.symbol || !pairAddress || !pair.url) {
+  if (!chainId || !token?.address || !token.symbol || !pairAddress) {
     return null;
   }
 
@@ -290,7 +421,7 @@ function normalizePair(pair: DexPair, candidate?: Candidate): MarketToken | null
     chainId,
     chainLabel: chainLabel(chainId),
     dexId: pair.dexId ?? "unknown",
-    url: pair.url,
+    url: anyAlphaTokenUrl(chainId, token.address),
     pairAddress,
     tokenAddress: token.address,
     name: token.name ?? token.symbol,
@@ -520,6 +651,23 @@ async function searchPairs(q: string, chainId?: string): Promise<MarketToken[]> 
   return markets.filter((market) => market.chainId.toLowerCase() === chainId.toLowerCase());
 }
 
+async function fetchTokenPairs(chainId: string, tokenAddress: string): Promise<MarketToken[]> {
+  return fetchJson<DexPair[]>(
+    `/tokens/v1/${encodeURIComponent(chainId)}/${encodeURIComponent(tokenAddress)}`,
+  )
+    .then((rows) =>
+      asArray<DexPair>(rows)
+        .map((pair) =>
+          normalizePair(pair, {
+            chainId,
+            tokenAddress,
+          }),
+        )
+        .filter((market): market is MarketToken => market !== null),
+    )
+    .catch(() => []);
+}
+
 async function fetchSeededSearchMarkets(): Promise<MarketToken[]> {
   const tasks = LISTING_SEARCH_SEEDS.map((seed) => () => searchPairs(seed.term, seed.chainId).catch(() => []));
   return (await runWithConcurrency(tasks)).flat();
@@ -543,12 +691,19 @@ async function getCachedMarketUniverse(): Promise<MarketToken[]> {
 
   if (pendingMarketUniverse) return pendingMarketUniverse;
 
-  pendingMarketUniverse = fetchMarketUniverse()
+  pendingMarketUniverse = cachedJson({
+    key: "markets:universe",
+    ttlMs: cacheNumberEnv("MARKET_UNIVERSE_CACHE_TTL_MS", MARKET_UNIVERSE_CACHE_TTL_MS, 5_000, 300_000),
+    staleTtlMs: cacheNumberEnv("MARKET_UNIVERSE_STALE_CACHE_TTL_MS", 180_000, 30_000, 900_000),
+    load: fetchMarketUniverse,
+  })
     .then((markets) => {
-      cachedMarketUniverse = {
-        markets,
-        updatedAt: Date.now(),
-      };
+      if (markets.length > 0) {
+        cachedMarketUniverse = {
+          markets,
+          updatedAt: Date.now(),
+        };
+      }
       return markets;
     })
     .catch((error) => {
@@ -562,7 +717,7 @@ async function getCachedMarketUniverse(): Promise<MarketToken[]> {
   return pendingMarketUniverse;
 }
 
-export async function getMarketListings(query: MarketQuery = {}): Promise<MarketListResponse> {
+async function getMarketListingsFresh(query: MarketQuery = {}): Promise<MarketListResponse> {
   const fetchAll = query.all === true;
   const limit = fetchAll ? undefined : Math.max(1, Math.min(MAX_LIST_LIMIT, query.limit ?? DEFAULT_LIMIT));
   const normalizedChain = query.chain?.trim().toLowerCase();
@@ -596,9 +751,12 @@ export async function getMarketListings(query: MarketQuery = {}): Promise<Market
         globalAggregates.providerSnapshot,
       ]
     : enriched.providers;
+  const marketsWithBundles = await attachBundleAnalysesToTokens(enriched.markets);
+  scheduleBundleAnalysisForMarkets(marketsWithBundles);
+  scheduleBundleExitMonitor();
 
   return {
-    data: enriched.markets,
+    data: marketsWithBundles,
     total,
     limit: typeof limit === "number" ? limit : total,
     aggregates: globalAggregates?.aggregates ?? localAggregates,
@@ -608,44 +766,312 @@ export async function getMarketListings(query: MarketQuery = {}): Promise<Market
   };
 }
 
-export async function getMarketDetail(chainId: string, tokenAddress: string): Promise<MarketDetailResponse | null> {
-  const pairs = await fetchJson<DexPair[]>(
-    `/tokens/v1/${encodeURIComponent(chainId)}/${encodeURIComponent(tokenAddress)}`,
-  )
-    .then((rows) =>
-      asArray<DexPair>(rows)
-        .map((pair) =>
-          normalizePair(pair, {
-            chainId,
-            tokenAddress,
-          }),
-        )
-        .filter((market): market is MarketToken => market !== null),
-    )
-    .catch(() => []);
+export async function getMarketListings(query: MarketQuery = {}): Promise<MarketListResponse> {
+  return cachedJson({
+    key: marketListCacheKey(query),
+    ttlMs: marketListCacheTtlMs(query),
+    staleTtlMs: marketListStaleTtlMs(query),
+    load: () => getMarketListingsFresh(query),
+  });
+}
 
-  const sortedPairs = sortMarkets(pairs, "trending");
-  if (!sortedPairs.length) return null;
+async function completeMarketDetail(detail: MarketDetailResponse, chainId: string, tokenAddress: string): Promise<MarketDetailResponse> {
+  const needsHolderRows = detail.holders.length === 0;
+  const needsTradeRows = detail.trades.length === 0;
+  const [orders, solanaHolders, moralisHolders, blockscoutHolders, solanaTrades, alchemyTrades] = await Promise.all([
+    withDetailBudget(fetchDexOrders(chainId, tokenAddress), []),
+    needsHolderRows
+      ? withDetailBudget(fetchSolanaHolderPositions(detail.token, 20), { holders: [] } as SolanaHolderPositionsResult)
+      : Promise.resolve<SolanaHolderPositionsResult>({ holders: [] }),
+    needsHolderRows ? withDetailBudget(fetchMoralisHolderPositions(detail.token, 40), []) : Promise.resolve([]),
+    needsHolderRows
+      ? withDetailBudget(fetchBlockscoutHolderPositions(detail.token, 50), { holders: [], totalCount: undefined as number | undefined })
+      : Promise.resolve({ holders: [], totalCount: undefined as number | undefined }),
+    needsTradeRows ? withDetailBudget(fetchSolanaRecentPoolTrades(detail.token, 30), []) : Promise.resolve([]),
+    needsTradeRows ? withDetailBudget(fetchAlchemyPoolTrades(detail.token, 80), []) : Promise.resolve([]),
+  ]);
+  const holders =
+    detail.holders.length > 0
+      ? detail.holders
+      : solanaHolders.holders.length > 0
+        ? solanaHolders.holders
+        : moralisHolders.length > 0
+          ? moralisHolders
+          : blockscoutHolders.holders;
+  const trades = detail.trades.length > 0 ? detail.trades : solanaTrades.length > 0 ? solanaTrades : alchemyTrades;
 
-  const [enriched, trades, holderPositions] = await Promise.all([
+  const completed: MarketDetailResponse = {
+    ...detail,
+    orders,
+    trades,
+    holders,
+    holdersTotal: detail.holdersTotal ?? solanaHolders.totalCount ?? blockscoutHolders.totalCount,
+  };
+
+  await snapshotHolderPnlFromDetail(completed).catch(() => undefined);
+
+  const tokensWithBundles = await attachBundleAnalysesToTokens([completed.token, ...completed.pairs]);
+  const [tokenWithBundle, ...pairsWithBundles] = tokensWithBundles;
+
+  return {
+    ...completed,
+    token: tokenWithBundle ?? completed.token,
+    pairs: pairsWithBundles.length > 0 ? pairsWithBundles : completed.pairs,
+  };
+}
+
+async function getDexMarketDetail(chainId: string, tokenAddress: string): Promise<MarketDetailResponse | null> {
+  const pairs = await fetchTokenPairs(chainId, tokenAddress);
+
+  let sortedPairs = sortMarkets(pairs, "trending");
+  if (!sortedPairs.length) {
+    return null;
+  }
+
+  const [enriched, trades, holderPositions, ohlcv] = await Promise.all([
     enrichMarkets(sortedPairs),
-    fetchMobulaTokenTrades(chainId, tokenAddress),
-    fetchMobulaHolderPositions(chainId, tokenAddress),
+    withDetailBudget(fetchMobulaTokenTrades(chainId, tokenAddress), []),
+    withDetailBudget(fetchMobulaHolderPositions(chainId, tokenAddress), { holders: [], totalCount: undefined }),
+    withDetailBudget(fetchMobulaBestOhlcv(chainId, tokenAddress, sortedPairs[0]?.pairAddress), []),
   ]);
   const token = enriched.markets[0];
 
   if (!token) return null;
 
-  return {
+  const baseDetail: MarketDetailResponse = {
     token,
     pairs: enriched.markets,
+    ohlcv,
     trades,
+    orders: [],
     holders: holderPositions.holders,
     holdersTotal: holderPositions.totalCount,
     source: "aggregated",
     updatedAt: new Date().toISOString(),
     providers: enriched.providers,
   };
+  const moralisDetail = await withDetailBudget(fillMarketDetailWithMoralis(baseDetail), baseDetail);
+  const detail = await withDetailBudget(fillMarketDetailWithGeckoTerminal(moralisDetail), moralisDetail);
+
+  return completeMarketDetail(detail, chainId, tokenAddress);
+}
+
+async function getDexMarketDetailBase(chainId: string, tokenAddress: string): Promise<MarketDetailResponse | null> {
+  const pairs = sortMarkets(await fetchTokenPairs(chainId, tokenAddress), "trending").map(withDexProvider);
+  const token = pairs[0];
+
+  if (!token) return null;
+
+  return {
+    token,
+    pairs,
+    ohlcv: [],
+    trades: [],
+    orders: [],
+    holders: [],
+    source: "aggregated",
+    updatedAt: new Date().toISOString(),
+    providers: [DEX_PROVIDER],
+  };
+}
+
+function marketBaseDetailFromPairs(pairs: MarketToken[]): MarketDetailResponse | null {
+  const sortedPairs = sortMarkets(pairs, "trending").map(withDexProvider);
+  const token = sortedPairs[0];
+
+  if (!token) return null;
+
+  return {
+    token,
+    pairs: sortedPairs,
+    ohlcv: [],
+    trades: [],
+    orders: [],
+    holders: [],
+    source: "aggregated",
+    updatedAt: new Date().toISOString(),
+    providers: [DEX_PROVIDER],
+  };
+}
+
+async function getUniverseMarketDetailBase(chainId: string, tokenAddress: string): Promise<MarketDetailResponse | null> {
+  const normalizedChain = chainId.trim().toLowerCase();
+  const normalizedToken = tokenAddress.trim().toLowerCase();
+  const markets = await getCachedMarketUniverse().catch(() => []);
+  const pairs = markets.filter(
+    (market) =>
+      market.chainId.toLowerCase() === normalizedChain &&
+      market.tokenAddress.toLowerCase() === normalizedToken,
+  );
+
+  return marketBaseDetailFromPairs(pairs);
+}
+
+function mergeUnique<T>(left: T[], right: T[], key: (item: T) => string): T[] {
+  const seen = new Set<string>();
+  const merged: T[] = [];
+
+  for (const item of [...left, ...right]) {
+    const id = key(item);
+    if (seen.has(id)) continue;
+    seen.add(id);
+    merged.push(item);
+  }
+
+  return merged;
+}
+
+function mergeMarketDetails(primary: MarketDetailResponse, fallback: MarketDetailResponse): MarketDetailResponse {
+  const useFallbackMarket =
+    (primary.trades.length === 0 && fallback.trades.length > 0) ||
+    (primary.ohlcv.length === 0 && fallback.ohlcv.length > 0);
+  const providers = mergeUnique(primary.providers, fallback.providers, (provider) => provider.provider);
+  const tokenProviders = mergeUnique(primary.token.providers, fallback.token.providers, (provider) => provider.provider);
+
+  return {
+    ...primary,
+    token: {
+      ...fallback.token,
+      ...primary.token,
+      pairAddress: useFallbackMarket ? fallback.token.pairAddress : primary.token.pairAddress || fallback.token.pairAddress,
+      dexId: useFallbackMarket ? fallback.token.dexId : primary.token.dexId || fallback.token.dexId,
+      url: primary.token.url || fallback.token.url,
+      links: mergeUnique(primary.token.links, fallback.token.links, (link) => link.url),
+      narrativeTags: mergeUnique(primary.token.narrativeTags, fallback.token.narrativeTags, (tag) => tag),
+      riskFlags: mergeUnique(primary.token.riskFlags, fallback.token.riskFlags, (flag) => flag),
+      security: {
+        ...fallback.token.security,
+        ...primary.token.security,
+      },
+      providers: tokenProviders,
+    },
+    pairs: fallback.pairs.length > 0 ? fallback.pairs : primary.pairs,
+    ohlcv: primary.ohlcv.length > 0 ? primary.ohlcv : fallback.ohlcv,
+    trades: primary.trades.length > 0 ? primary.trades : fallback.trades,
+    orders: primary.orders.length > 0 ? primary.orders : fallback.orders,
+    holders: primary.holders.length > 0 ? primary.holders : fallback.holders,
+    holdersTotal: primary.holdersTotal ?? fallback.holdersTotal,
+    providers,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function detailCacheKey(chainId: string, tokenAddress: string): string {
+  return `${chainId.trim().toLowerCase()}:${tokenAddress.trim().toLowerCase()}`;
+}
+
+function hasDetailRows(detail: MarketDetailResponse): boolean {
+  return detail.trades.length > 0 || detail.ohlcv.length > 0 || detail.holders.length > 0 || detail.orders.length > 0;
+}
+
+function mergeTradeRows(fresh: MarketTokenTrade[], previous: MarketTokenTrade[]): MarketTokenTrade[] {
+  return mergeUnique(fresh, previous, (trade) => trade.transactionHash?.toLowerCase() || trade.id.toLowerCase())
+    .sort((left, right) => (right.timestamp ?? 0) - (left.timestamp ?? 0))
+    .slice(0, 300);
+}
+
+function mergeCandleRows(fresh: MarketOhlcvCandle[], previous: MarketOhlcvCandle[]): MarketOhlcvCandle[] {
+  const byTime = new Map<number, MarketOhlcvCandle>();
+  for (const candle of previous) byTime.set(candle.t, candle);
+  for (const candle of fresh) byTime.set(candle.t, candle);
+  return [...byTime.values()].sort((left, right) => left.t - right.t).slice(-1000);
+}
+
+function mergeHolderRows(fresh: MarketTokenHolderPosition[], previous: MarketTokenHolderPosition[]): MarketTokenHolderPosition[] {
+  return mergeUnique(fresh, previous, (holder) => holder.walletAddress.toLowerCase()).slice(0, 80);
+}
+
+function mergeOrderRows(fresh: MarketTokenOrder[], previous: MarketTokenOrder[]): MarketTokenOrder[] {
+  return mergeUnique(fresh, previous, (order) => order.id.toLowerCase()).slice(0, 80);
+}
+
+function stabilizeMarketDetail(detail: MarketDetailResponse, chainId: string, tokenAddress: string): MarketDetailResponse {
+  const now = Date.now();
+  const cached = detailLastGoodCache.get(detailCacheKey(chainId, tokenAddress));
+  const previous = cached && cached.expiresAt > now ? cached.detail : null;
+
+  const stable: MarketDetailResponse = previous
+    ? {
+        ...detail,
+        ohlcv: mergeCandleRows(detail.ohlcv, previous.ohlcv),
+        trades: mergeTradeRows(detail.trades, previous.trades),
+        orders: mergeOrderRows(detail.orders, previous.orders),
+        holders: mergeHolderRows(detail.holders, previous.holders),
+        holdersTotal: detail.holdersTotal ?? previous.holdersTotal,
+        providers: mergeUnique(detail.providers, previous.providers, (provider) => provider.provider),
+      }
+    : detail;
+
+  if (hasDetailRows(stable)) {
+    detailLastGoodCache.set(detailCacheKey(chainId, tokenAddress), {
+      detail: stable,
+      expiresAt: now + DETAIL_LAST_GOOD_TTL_MS,
+    });
+  }
+
+  return stable;
+}
+
+function getCachedStableMarketDetail(chainId: string, tokenAddress: string): MarketDetailResponse | null {
+  const cached = detailLastGoodCache.get(detailCacheKey(chainId, tokenAddress));
+  if (!cached || cached.expiresAt <= Date.now()) return null;
+  return cached.detail;
+}
+
+async function getMarketDetailFull(chainId: string, tokenAddress: string): Promise<MarketDetailResponse | null> {
+  const mobulaDetail = await withDetailBudget(getMobulaMarketDetail(chainId, tokenAddress), null);
+  const launchpadDetail = mobulaDetail
+    ? null
+    : await withDetailBudget(getLaunchpadMarketDetailFallback(chainId, tokenAddress), null);
+  const providerDetail = mobulaDetail ?? launchpadDetail;
+
+  if (providerDetail) {
+    const moralisDetail = await withDetailBudget(fillMarketDetailWithMoralis(providerDetail), providerDetail);
+    const geckoDetail = await withDetailBudget(fillMarketDetailWithGeckoTerminal(moralisDetail), moralisDetail);
+    const detail = await completeMarketDetail(geckoDetail, chainId, tokenAddress);
+
+    if (detail.trades.length > 0 && detail.ohlcv.length > 0) return stabilizeMarketDetail(detail, chainId, tokenAddress);
+
+    const dexDetail = await getDexMarketDetail(chainId, tokenAddress).catch(() => null);
+    return stabilizeMarketDetail(dexDetail ? mergeMarketDetails(detail, dexDetail) : detail, chainId, tokenAddress);
+  }
+
+  const dexDetail = await getDexMarketDetail(chainId, tokenAddress).catch(() => null);
+  return dexDetail ? stabilizeMarketDetail(dexDetail, chainId, tokenAddress) : getCachedStableMarketDetail(chainId, tokenAddress);
+}
+
+async function getMarketDetailFast(chainId: string, tokenAddress: string): Promise<MarketDetailResponse | null> {
+  const cachedStable = getCachedStableMarketDetail(chainId, tokenAddress);
+  if (cachedStable) return cachedStable;
+
+  const universeBaseDetail = await getUniverseMarketDetailBase(chainId, tokenAddress);
+  const baseDetail = universeBaseDetail ?? (await withDetailBudget(getDexMarketDetailBase(chainId, tokenAddress), null));
+  if (!baseDetail) return getMarketDetailFull(chainId, tokenAddress);
+
+  const stableBase = stabilizeMarketDetail(baseDetail, chainId, tokenAddress);
+
+  void getMarketDetailFull(chainId, tokenAddress)
+    .then(async (detail) => {
+      if (!detail) return;
+      await writeCachedJson(
+        marketDetailCacheKey(chainId, tokenAddress),
+        detail,
+        marketDetailCacheTtlMs(),
+        marketDetailStaleTtlMs(),
+      );
+    })
+    .catch(() => undefined);
+
+  return stableBase;
+}
+
+export async function getMarketDetail(chainId: string, tokenAddress: string): Promise<MarketDetailResponse | null> {
+  return cachedJson({
+    key: marketDetailCacheKey(chainId, tokenAddress),
+    ttlMs: marketDetailCacheTtlMs(),
+    staleTtlMs: marketDetailStaleTtlMs(),
+    load: () => getMarketDetailFast(chainId, tokenAddress),
+  });
 }
 
 function signalReason(token: MarketToken): string {
@@ -660,7 +1086,7 @@ function signalReason(token: MarketToken): string {
   return "Passed the current AnyAlpha market filters.";
 }
 
-export async function getMarketSignals(limit = 12): Promise<MarketSignalsResponse> {
+async function getMarketSignalsFresh(limit = 12): Promise<MarketSignalsResponse> {
   const markets = await getMarketListings({ sort: "trending", limit: Math.max(10, limit * 2) });
   const signals: MarketSignal[] = markets.data
     .filter((token) => token.signalScore >= 45)
@@ -686,4 +1112,15 @@ export async function getMarketSignals(limit = 12): Promise<MarketSignalsRespons
     updatedAt: new Date().toISOString(),
     providers: markets.providers,
   };
+}
+
+export async function getMarketSignals(limit = 12): Promise<MarketSignalsResponse> {
+  const boundedLimit = Math.max(1, Math.min(50, Math.round(limit)));
+
+  return cachedJson({
+    key: `markets:signals:${boundedLimit}`,
+    ttlMs: cacheNumberEnv("MARKET_SIGNALS_CACHE_TTL_MS", 15_000, 1_000, 120_000),
+    staleTtlMs: cacheNumberEnv("MARKET_SIGNALS_STALE_CACHE_TTL_MS", 120_000, 5_000, 600_000),
+    load: () => getMarketSignalsFresh(boundedLimit),
+  });
 }

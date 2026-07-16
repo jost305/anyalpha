@@ -54,10 +54,10 @@ export function PlaceBetModal({ open, onOpenChange, token = 'PEPEFUN', side = 'y
           </div>
 
           <div className={`flex items-center justify-between p-2 rounded border ${
-            isYes ? 'bg-secondary/10 border-secondary/30' : 'bg-destructive/10 border-destructive/30'
+            isYes ? 'bg-success/10 border-success/30' : 'bg-destructive/10 border-destructive/30'
           }`}>
             <span className="text-sm font-bold">{side.toUpperCase()}</span>
-            <span className={`text-lg font-mono font-bold ${isYes ? 'text-secondary' : 'text-destructive'}`}>
+            <span className={`text-lg font-mono font-bold ${isYes ? 'text-success' : 'text-destructive'}`}>
               {percent}%
             </span>
           </div>
@@ -127,8 +127,8 @@ export function PlaceBetModal({ open, onOpenChange, token = 'PEPEFUN', side = 'y
             onClick={handleBet}
             className={`flex-1 py-1.5 rounded text-sm font-bold hover:opacity-90 transition ${
               isYes
-                ? 'bg-secondary text-background'
-                : 'bg-destructive text-background'
+                ? 'bg-success text-success-foreground'
+                : 'bg-destructive text-destructive-foreground'
             }`}
           >
             Confirm Bet

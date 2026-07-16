@@ -1,4 +1,4 @@
-import { Megaphone, Swords, Send, Twitter } from 'lucide-react';
+import { Megaphone, Send, Twitter } from 'lucide-react';
 
 const adSlots = [
   {
@@ -37,17 +37,18 @@ const adSlots = [
     tag: 'Feed',
     description: 'Sponsored post placement in the activity feed.',
     surface: 'anyAlpha',
-    color: 'text-purple-400',
-    border: 'border-purple-500/30',
-    bg: 'bg-purple-500/5',
+    color: 'text-primary',
+    border: 'border-primary/30',
+    bg: 'bg-primary/5',
   },
 ];
 
-const battleSteps = [
-  { n: 1, text: 'Submit token, battle theme, and preferred window.' },
-  { n: 2, text: 'Stake BXBT to reserve the sponsored battle slot.' },
-  { n: 3, text: 'Battle is labeled as sponsored and monitored for abuse.' },
-];
+const adSlotEmoji: Record<string, string> = {
+  'Hot Ticker Slot': '🔥',
+  'Sidebar Feature': '📌',
+  'Market Spotlight': '📊',
+  'Feed Boost': '📰',
+};
 
 const partnerTypes = [
   {
@@ -67,10 +68,16 @@ const partnerTypes = [
   },
 ];
 
+const partnerEmoji: Record<string, string> = {
+  'Launch Partners': '🚀',
+  'Media Partners': '📡',
+  'Ecosystem Partners': '🔗',
+};
+
 export default function AdvertisePage() {
   return (
     <div className="h-full overflow-y-auto bg-background text-foreground">
-      <div className="max-w-3xl mx-auto px-4 py-8 space-y-10">
+      <div className="mx-auto max-w-3xl space-y-8 px-4 pb-8 pt-4 md:space-y-10 md:py-8">
 
         {/* Hero */}
         <div className="text-center space-y-3">
@@ -110,7 +117,7 @@ export default function AdvertisePage() {
             {adSlots.map((slot) => (
               <div key={slot.name} className={`rounded-lg border ${slot.border} ${slot.bg} p-4 space-y-2`}>
                 <div className="flex items-start justify-between">
-                  <span className="text-2xl">{slot.icon}</span>
+                  <span className="text-2xl">{adSlotEmoji[slot.name] ?? slot.icon}</span>
                   <span className={`text-xs font-bold px-2 py-0.5 rounded border ${slot.border} ${slot.color}`}>{slot.tag}</span>
                 </div>
                 <div className="font-bold text-sm">{slot.name}</div>
@@ -124,45 +131,6 @@ export default function AdvertisePage() {
           </div>
         </section>
 
-        {/* Sponsored Battle */}
-        <section className="space-y-3">
-          <h2 className="text-base font-bold text-muted-foreground uppercase tracking-widest border-b border-border pb-2">
-            Sponsored Battle Hosting
-          </h2>
-          <div className="bg-card border border-border rounded-lg p-5 space-y-4">
-            <div className="flex items-start gap-3">
-              <Swords className="text-primary shrink-0 mt-0.5" size={20} />
-              <div>
-                <div className="font-bold text-sm">Promote your memecoin with a labeled Agent Battle event.</div>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  <span className="text-xs bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 px-2 py-0.5 rounded font-mono">BXBT stake required</span>
-                  <span className="text-xs bg-muted border border-border text-muted-foreground px-2 py-0.5 rounded font-mono">Confirm with team</span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">Reservation stake for one sponsored battle host slot.</p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              {battleSteps.map((step) => (
-                <div key={step.n} className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center shrink-0 mt-0.5">
-                    <span className="text-xs font-bold text-primary">{step.n}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">{step.text}</p>
-                </div>
-              ))}
-            </div>
-            <div className="bg-red-500/5 border border-red-500/20 rounded p-3">
-              <div className="text-xs font-bold text-red-400 mb-1">Promotion safety rule</div>
-              <p className="text-xs text-muted-foreground">
-                Sponsored battles are visibility placements only. They are not for wash trading, fake volume, pump-and-dump coordination, or gaming a coin trade.
-              </p>
-            </div>
-            <button className="w-full bg-primary text-primary-foreground text-sm font-bold py-2 rounded hover:opacity-80 transition flex items-center justify-center gap-2">
-              <Swords size={14} /> Book Sponsored Battle
-            </button>
-          </div>
-        </section>
-
         {/* Partnerships */}
         <section className="space-y-3">
           <h2 className="text-base font-bold text-muted-foreground uppercase tracking-widest border-b border-border pb-2">Partnerships</h2>
@@ -170,7 +138,7 @@ export default function AdvertisePage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {partnerTypes.map((p) => (
               <div key={p.name} className="bg-card border border-border rounded-lg p-4 space-y-2">
-                <div className="text-xl">{p.icon}</div>
+                <div className="text-xl">{partnerEmoji[p.name] ?? p.icon}</div>
                 <div className="text-sm font-bold">{p.name}</div>
                 <p className="text-xs text-muted-foreground">{p.desc}</p>
               </div>

@@ -44,13 +44,13 @@ export default function AgentBattle() {
               <div className="text-4xl mb-1">{agent.emoji}</div>
               <div className="text-sm font-bold text-foreground">{agent.name}</div>
               <div className={`text-xl font-mono font-bold mt-0.5 transition-colors ${
-                agent.color === 'green' ? 'text-secondary' : 'text-destructive'
+                agent.color === 'green' ? 'text-success' : 'text-destructive'
               }`}>
                 {Math.round(agent.confidence)}%
               </div>
               <div className="w-full h-2 bg-muted rounded mt-1.5 overflow-hidden">
                 <div
-                  className={`h-full transition-all duration-700 ${agent.color === 'green' ? 'bg-secondary' : 'bg-destructive'}`}
+                  className={`h-full transition-all duration-700 ${agent.color === 'green' ? 'bg-success' : 'bg-destructive'}`}
                   style={{ width: `${agent.confidence}%` }}
                 />
               </div>
@@ -63,7 +63,7 @@ export default function AgentBattle() {
         <div className="space-y-1.5 text-sm">
           {battleLog.map((log, idx) => (
             <div key={idx} className="flex gap-1.5 text-xs">
-              <span className={`font-bold whitespace-nowrap shrink-0 ${log.isPositive ? 'text-secondary' : 'text-destructive'}`}>
+              <span className={`font-bold whitespace-nowrap shrink-0 ${log.isPositive ? 'text-success' : 'text-destructive'}`}>
                 {log.agent}
               </span>
               <span className="text-muted-foreground">{log.time}:</span>

@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 
-const target = (process.env.SERVICE_TARGET ?? "").trim().toLowerCase();
+const target = (process.env.SERVICE_TARGET ?? "api").trim().toLowerCase();
 
 const command =
   process.platform === "win32" ? "pnpm.cmd" : "pnpm";
@@ -14,7 +14,7 @@ const targetArgs =
 
 if (!targetArgs) {
   console.error(
-    'SERVICE_TARGET must be set to "api" or "web" for Railway startup.',
+    'SERVICE_TARGET must be "api" or "web" for Railway startup.',
   );
   process.exit(1);
 }
@@ -31,4 +31,3 @@ child.on("exit", (code, signal) => {
   }
   process.exit(code ?? 1);
 });
-

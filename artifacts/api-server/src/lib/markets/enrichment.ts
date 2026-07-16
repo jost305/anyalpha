@@ -1,4 +1,5 @@
 import { fetchAlchemyEnrichments } from "./alchemy";
+import { fetchBitqueryEnrichments } from "./bitquery";
 import { fetchHeliusEnrichments } from "./helius";
 import { fetchMobulaEnrichments } from "./mobula";
 import { fetchMoralisEnrichments } from "./moralis";
@@ -12,6 +13,7 @@ import {
   type MarketEnrichment,
   type ProviderBatchResult,
 } from "./provider-utils";
+import { cacheNumberEnv } from "../cache/redis-cache";
 
 export interface EnrichedMarkets {
   markets: MarketToken[];
@@ -19,9 +21,50 @@ export interface EnrichedMarkets {
 }
 
 function enrichmentLimit(): number {
-  const raw = Number(process.env.MARKET_ENRICHMENT_LIMIT ?? "12");
-  if (!Number.isFinite(raw)) return 12;
+  const raw = Number(process.env.MARKET_ENRICHMENT_LIMIT ?? "6");
+  if (!Number.isFinite(raw)) return 6;
   return Math.max(0, Math.min(50, Math.floor(raw)));
+}
+
+function providerTimeoutMs(): number {
+  return cacheNumberEnv("MARKET_PROVIDER_TIMEOUT_MS", 1_800, 750, 20_000);
+}
+
+async function withProviderBudget(
+  label: MarketProviderSnapshot["label"],
+  provider: MarketProviderSnapshot["provider"],
+  load: () => Promise<ProviderBatchResult>,
+): Promise<ProviderBatchResult> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<ProviderBatchResult>((resolve) => {
+    timeoutId = setTimeout(() => {
+      resolve({
+        enrichments: [],
+        snapshot: {
+          provider,
+          status: "error",
+          label,
+          detail: `Timed out after ${providerTimeoutMs()}ms; serving cached/base market data.`,
+        },
+      });
+    }, providerTimeoutMs());
+  });
+
+  try {
+    return await Promise.race([load(), timeout]);
+  } catch (err) {
+    return {
+      enrichments: [],
+      snapshot: {
+        provider,
+        status: "error",
+        label,
+        detail: err instanceof Error ? err.message : `${label} enrichment failed.`,
+      },
+    };
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
 }
 
 function uniqueStrings(values: string[]): string[] {
@@ -176,10 +219,11 @@ export async function enrichMarkets(markets: MarketToken[]): Promise<EnrichedMar
   }
 
   const results: ProviderBatchResult[] = await Promise.all([
-    fetchMobulaEnrichments(target),
-    fetchHeliusEnrichments(target),
-    fetchMoralisEnrichments(target),
-    fetchAlchemyEnrichments(target),
+    withProviderBudget("Mobula", "mobula", () => fetchMobulaEnrichments(target)),
+    withProviderBudget("Helius", "helius", () => fetchHeliusEnrichments(target)),
+    withProviderBudget("Moralis", "moralis", () => fetchMoralisEnrichments(target)),
+    withProviderBudget("Alchemy", "alchemy", () => fetchAlchemyEnrichments(target)),
+    withProviderBudget("Bitquery", "bitquery", () => fetchBitqueryEnrichments(target)),
   ]);
 
   const enrichments = results.flatMap((result) => result.enrichments);

@@ -85,6 +85,20 @@ paths:
             maximum: 100
             default: 100
           required: false
+        - in: query
+          name: enrich
+          schema:
+            type: boolean
+            default: true
+          required: false
+          description: Set false for lightweight DexScreener-only list responses.
+        - in: query
+          name: all
+          schema:
+            type: boolean
+            default: false
+          required: false
+          description: Return all available rows instead of applying the limit.
       responses:
         "200":
           description: Live market list
@@ -392,7 +406,7 @@ components:
       properties:
         provider:
           type: string
-          enum: [dexscreener, mobula, helius, moralis, alchemy]
+          enum: [dexscreener, mobula, helius, moralis, alchemy, bitquery]
         status:
           type: string
           enum: [live, demo, missing_key, skipped, error]

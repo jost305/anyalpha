@@ -20,7 +20,10 @@ export default function TopAgents() {
     return (
       <div className="relative h-full">
         <AgentsSkeleton />
-        <button onClick={() => setStateMode('loaded')} className="absolute bottom-2 right-2 text-xs text-muted-foreground hover:text-foreground border border-border rounded px-2 py-1">
+        <button
+          onClick={() => setStateMode('loaded')}
+          className="absolute bottom-2 right-2 text-xs text-muted-foreground hover:text-foreground border border-border rounded px-2 py-1"
+        >
           Load
         </button>
       </div>
@@ -35,7 +38,13 @@ export default function TopAgents() {
     <div className="flex flex-col h-full overflow-hidden">
       <div className="border-b border-border bg-background px-2 py-1.5 flex items-center justify-between shrink-0">
         <div className="text-sm font-bold text-foreground">TOP AGENTS (7D)</div>
-        <button onClick={() => setStateMode('loading')} className="text-xs text-muted-foreground hover:text-foreground" title="Simulate loading">⟳</button>
+        <button
+          onClick={() => setStateMode('loading')}
+          className="text-xs text-muted-foreground hover:text-foreground"
+          title="Simulate loading"
+        >
+          ⟳
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto bg-background">
@@ -45,9 +54,17 @@ export default function TopAgents() {
             className={`border-b border-border px-2 py-1.5 hover:bg-muted/30 transition cursor-pointer ${idx % 2 === 0 ? 'bg-background' : 'bg-muted/10'}`}
           >
             <div className="flex items-center gap-2.5">
-              <div className={`font-bold w-5 text-center text-xs ${
-                agent.rank === 1 ? 'text-yellow-400' : agent.rank === 2 ? 'text-gray-400' : agent.rank === 3 ? 'text-orange-400' : 'text-muted-foreground'
-              }`}>
+              <div
+                className={`font-bold w-5 text-center text-xs ${
+                  agent.rank === 1
+                    ? 'text-yellow-400'
+                    : agent.rank === 2
+                      ? 'text-gray-400'
+                      : agent.rank === 3
+                        ? 'text-orange-400'
+                        : 'text-muted-foreground'
+                }`}
+              >
                 {agent.rank === 1 ? '🥇' : agent.rank === 2 ? '🥈' : agent.rank === 3 ? '🥉' : agent.rank}
               </div>
               <div className="text-2xl">{agent.emoji}</div>
@@ -56,12 +73,16 @@ export default function TopAgents() {
                   <div className="text-sm font-bold text-foreground">{agent.name}</div>
                   {agent.rank <= 2 && <TrendingBadge />}
                 </div>
-                <div className={`text-xs font-mono ${agent.trend.startsWith('+') ? 'text-secondary' : 'text-destructive'}`}>
+                <div
+                  className={`text-xs font-mono ${
+                    agent.trend.startsWith('+') ? 'text-success' : 'text-destructive'
+                  }`}
+                >
                   {agent.trend} today
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-sm font-mono font-bold text-secondary">{agent.winRate}</div>
+                <div className="text-sm font-mono font-bold text-success">{agent.winRate}</div>
                 <div className="text-xs font-mono text-muted-foreground">{agent.winAmount}</div>
               </div>
             </div>
@@ -71,7 +92,7 @@ export default function TopAgents() {
 
       <div className="border-t border-border bg-background px-2 py-1.5 shrink-0">
         <button className="text-sm text-accent hover:text-accent/80 font-bold w-full text-left">
-          View leaderboard →
+          View top agents →
         </button>
       </div>
     </div>

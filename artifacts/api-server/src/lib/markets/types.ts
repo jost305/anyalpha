@@ -16,7 +16,7 @@ export interface MarketTokenLink {
   url: string;
 }
 
-export type MarketProvider = "dexscreener" | "mobula" | "helius" | "moralis" | "alchemy";
+export type MarketProvider = "dexscreener" | "mobula" | "geckoterminal" | "helius" | "moralis" | "alchemy" | "bitquery";
 
 export type MarketProviderStatus = "live" | "demo" | "missing_key" | "skipped" | "error";
 
@@ -40,6 +40,41 @@ export interface MarketTokenSecurity {
   renounced?: boolean;
   verifiedContract?: boolean;
   possibleSpam?: boolean;
+}
+
+export type MarketBundleLabel = "bundled" | "organic" | "suspicious" | "unknown";
+
+export interface MarketBundleReason {
+  code: string;
+  label: string;
+  detail?: string;
+  scoreImpact?: number;
+}
+
+export interface MarketBundleHolderPnl {
+  inProfitPct?: number;
+  breakevenPct?: number;
+  inLossPct?: number;
+  bundlePnl?: number;
+  retailPnl?: number;
+  snapshotAt?: string;
+}
+
+export interface MarketBundleAnalysis {
+  label: MarketBundleLabel;
+  score: number;
+  coordinatedWallets: number;
+  supplySnipedPct: number;
+  sniperWallets: number;
+  deployerRugs: number;
+  bundleWalletsPnl?: number;
+  retailAvgPnl?: number;
+  bundleStillHolding?: boolean;
+  holderPnl?: MarketBundleHolderPnl;
+  reasons: MarketBundleReason[];
+  evidence: Record<string, unknown>;
+  analyzedAt?: string;
+  updatedAt?: string;
 }
 
 export interface MarketTokenTradePlatform {
@@ -99,6 +134,24 @@ export interface MarketTokenHolderPosition {
   platform?: MarketTokenTradePlatform;
 }
 
+export interface MarketTokenOrder {
+  id: string;
+  type?: string;
+  status?: string;
+  paymentTimestamp?: number;
+  createdAt?: number;
+  source: "dexscreener";
+}
+
+export interface MarketOhlcvCandle {
+  t: number;
+  o: number;
+  h: number;
+  l: number;
+  c: number;
+  v?: number;
+}
+
 export interface MarketToken {
   id: string;
   chainId: string;
@@ -131,6 +184,7 @@ export interface MarketToken {
   signalScore: number;
   providers: MarketProviderSnapshot[];
   security?: MarketTokenSecurity;
+  bundle?: MarketBundleAnalysis;
 }
 
 export interface MarketListResponse {
@@ -169,7 +223,9 @@ export interface MarketSignalsResponse {
 export interface MarketDetailResponse {
   token: MarketToken;
   pairs: MarketToken[];
+  ohlcv: MarketOhlcvCandle[];
   trades: MarketTokenTrade[];
+  orders: MarketTokenOrder[];
   holders: MarketTokenHolderPosition[];
   holdersTotal?: number;
   source: "aggregated";

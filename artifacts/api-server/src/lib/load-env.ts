@@ -4,8 +4,13 @@ import { fileURLToPath } from "node:url";
 
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
 const candidateDirs = collectCandidateDirs([process.cwd(), moduleDir], 5);
+const mode = (process.env.NODE_ENV ?? "").trim().toLowerCase();
 
 for (const dir of candidateDirs) {
+  if (mode === "production") {
+    loadIfPresent(path.join(dir, ".env.production.local"));
+    loadIfPresent(path.join(dir, ".env.production"));
+  }
   loadIfPresent(path.join(dir, ".env.local"));
   loadIfPresent(path.join(dir, ".env"));
 }

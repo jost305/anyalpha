@@ -1,0 +1,40 @@
+
+> @workspace/bantah@0.0.0 dev C:\Users\olusegun\Downloads\anyalpha-terminal\anyalpha-terminal\artifacts\bantah
+> vite --config vite.config.ts --host 0.0.0.0
+
+
+  [32m[1mVITE[22m v7.3.2[39m  [2mready in [0m[1m1134[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4173[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://169.254.92.18:[1m4173[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://169.254.113.18:[1m4173[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.1.2:[1m4173[22m/[39m
+[2m[32m  ➜[39m[22m[2m  press [22m[1mh + enter[22m[2m to show help[22m
+[2m8:36:21 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/token-page-mobile.tsx[22m
+[2m8:37:28 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/token-page-mobile.tsx[22m
+[2m8:42:52 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/token-page-mobile.tsx[22m
+[2m8:44:35 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/token-page-mobile.tsx[22m
+[2m8:44:35 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/token-page-mobile.tsx[22m
+[2m8:45:59 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/token-page-mobile.tsx[22m
+[2m8:50:42 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/token-page-mobile.tsx[22m
+[2m9:03:08 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/token-page-mobile.tsx[22m
+[2m9:12:22 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/layout/main-content.tsx, /src/components/pages/launchpad-page.tsx, /src/components/pages/watchlist-page.tsx, /src/components/layout/topbar.tsx, /src/components/pages/token-page.tsx, /src/components/pages/notifications-page.tsx, /src/components/sections/markets-table.tsx, /src/components/search/market-search.tsx, /src/components/pages/token-page-mobile.tsx[22m
+[2m9:12:54 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/token-page.tsx[22m
+[2m9:13:14 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/token-page-mobile.tsx[22m
+[2m9:13:50 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/notifications-page.tsx[22m
+[2m9:14:24 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/watchlist-page.tsx[22m
+[2m9:14:36 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/token-page-mobile.tsx[22m
+[2m9:33:44 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/App.tsx[22m
+[2m9:33:57 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/token-page.tsx[22m
+[2m9:34:41 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mindex.html[22m
+[2m9:54:32 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mindex.html[22m
+[2m9:59:16 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/layout/main-content.tsx[22m
+[2m10:01:30 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/layout/sidebar.tsx[22m
+[2m10:01:37 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/layout/mobile-drawer.tsx[22m
+[2m10:05:58 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/layout/sidebar.tsx[22m
+[2m10:06:32 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/App.tsx[22m
+[2m10:06:42 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/pages/chat-page.tsx[22m
+[2m10:25:45 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
+C:\Users\olusegun\Downloads\anyalpha-terminal\anyalpha-terminal\artifacts\bantah:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/bantah@0.0.0 dev: `vite --config vite.config.ts --host 0.0.0.0`
+Exit status 4294967295

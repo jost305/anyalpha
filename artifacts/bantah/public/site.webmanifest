@@ -1,0 +1,24 @@
+{
+  "name": "anyAlpha Terminal",
+  "short_name": "anyAlpha",
+  "description": "Live crypto market intelligence from anyAlpha Terminal.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f1117",
+  "theme_color": "#0f1117",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png?v=20260523",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/android-chrome-512x512.png?v=20260523",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

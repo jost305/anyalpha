@@ -1,0 +1,39 @@
+web server request failed TypeError: fetch failed
+    at node:internal/deps/undici/undici:14976:13
+    at async proxyApiRequest (file:///C:/Users/olusegun/Downloads/anyalpha-terminal/anyalpha-terminal/artifacts/bantah/server.mjs:142:23)
+    at async Server.<anonymous> (file:///C:/Users/olusegun/Downloads/anyalpha-terminal/anyalpha-terminal/artifacts/bantah/server.mjs:357:11) {
+  [cause]: HeadersTimeoutError: Headers Timeout Error
+      at FastTimer.onParserTimeout [as _onTimeout] (node:internal/deps/undici/undici:6391:32)
+      at Timeout.onTick [as _onTimeout] (node:internal/deps/undici/undici:2354:17)
+      at listOnTimeout (node:internal/timers:585:17)
+      at process.processTimers (node:internal/timers:521:7) {
+    code: 'UND_ERR_HEADERS_TIMEOUT',
+    [Symbol(undici.error.UND_ERR)]: true,
+    [Symbol(undici.error.UND_ERR_HEADERS_TIMEOUT)]: true
+  }
+}
+web server request failed TypeError: fetch failed
+    at node:internal/deps/undici/undici:14976:13
+    at async proxyApiRequest (file:///C:/Users/olusegun/Downloads/anyalpha-terminal/anyalpha-terminal/artifacts/bantah/server.mjs:142:23)
+    at async Server.<anonymous> (file:///C:/Users/olusegun/Downloads/anyalpha-terminal/anyalpha-terminal/artifacts/bantah/server.mjs:357:11) {
+  [cause]: Error: read ECONNRESET
+      at TCP.onStreamRead (node:internal/stream_base_commons:216:20) {
+    errno: -4077,
+    code: 'ECONNRESET',
+    syscall: 'read'
+  }
+}
+web server request failed TypeError: fetch failed
+    at node:internal/deps/undici/undici:14976:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async proxyApiRequest (file:///C:/Users/olusegun/Downloads/anyalpha-terminal/anyalpha-terminal/artifacts/bantah/server.mjs:142:23)
+    at async Server.<anonymous> (file:///C:/Users/olusegun/Downloads/anyalpha-terminal/anyalpha-terminal/artifacts/bantah/server.mjs:357:11) {
+  [cause]: Error: connect ECONNREFUSED 127.0.0.1:3000
+      at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16) {
+    errno: -4078,
+    code: 'ECONNREFUSED',
+    syscall: 'connect',
+    address: '127.0.0.1',
+    port: 3000
+  }
+}

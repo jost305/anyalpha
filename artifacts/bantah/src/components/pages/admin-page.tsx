@@ -24,6 +24,7 @@ import {
   fmtPct,
   fmtPrice,
   marketPairLabel,
+  marketTokenPath,
   type MarketProviderSnapshot,
   type MarketSignal,
   type MarketToken,
@@ -49,9 +50,11 @@ const TABS: { key: AdminTab; icon: LucideIcon; label: string }[] = [
 const PROVIDER_ROLES: Record<string, string> = {
   dexscreener: 'Discovery, boosted listings, pairs, liquidity, volume, and transaction activity.',
   mobula: 'Cross-chain token details, holder counts, security, liquidity, and market metadata.',
+  geckoterminal: 'Pool candles and recent on-chain trade prints.',
   helius: 'Solana DAS metadata, mint/freeze authority checks, and Solana price hints.',
   moralis: 'EVM price, liquidity, verified-contract, and spam checks.',
   alchemy: 'EVM price cross-checks and token metadata.',
+  bitquery: 'Low-latency price, volume, and on-chain DEX snapshots.',
 };
 
 function StatCard({ icon, label, value, sub, color }: StatCardProps) {
@@ -223,7 +226,7 @@ function ListingsTab({ tokens }: { tokens: MarketToken[] }) {
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-black text-foreground truncate">{marketPairLabel(token)}</span>
-                  <a href={token.url} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-primary">
+                  <a href={marketTokenPath(token)} className="text-muted-foreground hover:text-primary">
                     <ExternalLink size={12} />
                   </a>
                 </div>

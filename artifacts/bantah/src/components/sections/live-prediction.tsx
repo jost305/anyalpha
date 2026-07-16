@@ -80,8 +80,8 @@ export default function LivePrediction({ token }: PredictionProps) {
             onClick={() => openBetModal('yes')}
             className={`flex-1 py-2 rounded text-sm font-bold transition flex flex-col items-center gap-0.5 ${
               selectedChoice === 'yes'
-                ? 'bg-secondary text-background'
-                : 'bg-secondary/15 text-secondary border border-secondary/40 hover:bg-secondary/25'
+                ? 'bg-success text-success-foreground'
+                : 'bg-success/15 text-success border border-success/40 hover:bg-success/25'
             }`}
           >
             <span>YES</span>
@@ -104,7 +104,7 @@ export default function LivePrediction({ token }: PredictionProps) {
           <div className="text-xs text-muted-foreground mb-1">Pool Distribution</div>
           <div className="flex gap-2 mb-1">
             <div className="flex-1">
-              <div className="text-secondary font-bold text-sm">{yesVol.toLocaleString()}</div>
+              <div className="text-success font-bold text-sm">{yesVol.toLocaleString()}</div>
               <div className="text-muted-foreground text-xs">YES</div>
             </div>
             <div className="flex-1 text-right">
@@ -113,7 +113,7 @@ export default function LivePrediction({ token }: PredictionProps) {
             </div>
           </div>
           <div className="h-2 bg-muted rounded overflow-hidden flex">
-            <div className="bg-secondary transition-all duration-500" style={{ width: `${yesPercent}%` }} />
+            <div className="bg-success transition-all duration-500" style={{ width: `${yesPercent}%` }} />
             <div className="bg-destructive transition-all duration-500" style={{ width: `${noPercent}%` }} />
           </div>
         </div>
