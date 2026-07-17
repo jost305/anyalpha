@@ -5,7 +5,7 @@ import { setAuthTokenGetter } from '@workspace/api-client-react';
 import { AnimatePresence, MotionConfig, motion, useReducedMotion } from 'framer-motion';
 import Pusher from 'pusher-js';
 import { toast } from 'sonner';
-import { mutate } from 'swr';
+
 import { WagmiProvider } from '@privy-io/wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { wagmiConfig, robinhoodChain, robinhoodChainTestnet } from '@/lib/wagmi';
@@ -701,7 +701,6 @@ function RealtimeBridge({ onNotification }: { onNotification: (notification: Rea
           toast.success(`You earned ${data.points} Alpha Points! 🪙`, {
             description: `Action: ${data.action.replace(/_/g, ' ')}`,
           });
-          mutate('/api/alpha-points/dashboard');
         });
         channel.bind('notifications.read', () => {});
       })

@@ -90,7 +90,7 @@ export default function LauncherTradePage({ tokenAddress, onBack }: LauncherTrad
     address: launchpadAddress,
     abi: LaunchpadABI,
     functionName: 'tokenStates',
-    args: [targetAddress],
+    args: [targetAddress as `0x${string}`],
   });
 
   useLaunchpadPusher();
@@ -233,23 +233,23 @@ export default function LauncherTradePage({ tokenAddress, onBack }: LauncherTrad
 
   // Parse tokenStates struct
   let tokenStateObj = {
-    state: 0,
-    ethReserve: 0n,
-    tokenReserve: 0n,
-    creator: "0x0",
-    devAllocation: 0n
+    tokenAddress: "0x0000000000000000000000000000000000000000" as `0x${string}`,
+    virtualEthReserve: 0n,
+    virtualTokenReserve: 0n,
+    realEthReserve: 0n,
+    graduated: false
   };
   if (Array.isArray(tokenStatesData) && tokenStatesData.length >= 5) {
     tokenStateObj = {
-      state: tokenStatesData[0],
-      ethReserve: tokenStatesData[1],
-      tokenReserve: tokenStatesData[2],
-      creator: tokenStatesData[3],
-      devAllocation: tokenStatesData[4]
+      tokenAddress: tokenStatesData[0] as `0x${string}`,
+      virtualEthReserve: tokenStatesData[1] as bigint,
+      virtualTokenReserve: tokenStatesData[2] as bigint,
+      realEthReserve: tokenStatesData[3] as bigint,
+      graduated: tokenStatesData[4] as boolean
     };
   }
 
-  const realEthReserve = tokenStateObj.ethReserve;
+  const realEthReserve = tokenStateObj.realEthReserve;
   const graduationThreshold = parseEther('24');
   
   // Cap at 100%
@@ -325,7 +325,7 @@ export default function LauncherTradePage({ tokenAddress, onBack }: LauncherTrad
           address: launchpadAddress,
           abi: LaunchpadABI,
           functionName: 'buy',
-          args: [targetAddress, minTokensOut],
+          args: [targetAddress as `0x${string}`, minTokensOut],
           value,
         });
         toast.success(`Buy successful! Tx: ${tx}`, { id: loadingToast });
@@ -336,7 +336,7 @@ export default function LauncherTradePage({ tokenAddress, onBack }: LauncherTrad
           address: launchpadAddress,
           abi: LaunchpadABI,
           functionName: 'sell',
-          args: [targetAddress, tokenAmount, minEthOut],
+          args: [targetAddress as `0x${string}`, tokenAmount, minEthOut],
         });
         toast.success(`Sell successful! Tx: ${tx}`, { id: loadingToast });
       }

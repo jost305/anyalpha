@@ -30,7 +30,7 @@ function TokenImage({ uri, name, className }: { uri: string; name: string; class
           `https://cloudflare-ipfs.com/ipfs/${cleanUri}`,
           `https://dweb.link/ipfs/${cleanUri}`,
         ];
-        
+
         let meta = null;
         for (const gw of gateways) {
           try {
@@ -43,7 +43,7 @@ function TokenImage({ uri, name, className }: { uri: string; name: string; class
             continue;
           }
         }
-        
+
         if (meta && meta.image) {
           const imgUri = meta.image.replace('ipfs://', '');
           return `https://ipfs.io/ipfs/${imgUri}`;
@@ -60,7 +60,7 @@ function TokenImage({ uri, name, className }: { uri: string; name: string; class
   if (imageUrl) {
     return <img src={imageUrl} alt={name} className={className} />;
   }
-  
+
   return <div className={`flex items-center justify-center bg-muted text-muted-foreground ${className}`}><span className="text-xs">{name.slice(0, 1)}</span></div>;
 }
 
@@ -72,22 +72,22 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
   const [category, setCategory] = useState('last_trade');
   const [searchQuery, setSearchQuery] = useState('');
   const [watchlist, setWatchlist] = useState<string[]>([]);
-  
+
   const [deployStatus, setDeployStatus] = useState<'idle' | 'uploading' | 'confirming' | 'success' | 'error'>('idle');
   const [deployTx, setDeployTx] = useState<string | null>(null);
-  
+
   useLaunchpadPusher();
 
   useEffect(() => {
     const handleOpenCreateToken = () => setIsCreating(true);
     window.addEventListener('open-create-token', handleOpenCreateToken);
-    
+
     // Auto-scroll logic for mobile banner slider
     const interval = setInterval(() => {
       if (!sliderRef.current) return;
       // only auto-scroll if it's actually scrollable (i.e. mobile)
-      if (window.innerWidth >= 768) return; 
-      
+      if (window.innerWidth >= 768) return;
+
       const { scrollLeft, scrollWidth, clientWidth } = sliderRef.current;
       if (scrollLeft + clientWidth >= scrollWidth - 10) {
         sliderRef.current.scrollTo({ left: 0, behavior: 'smooth' });
@@ -115,7 +115,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
   const tokens = realTokens.map((t: any) => {
     // Start at $5K base market cap (virtual reserves)
     const extraEth = t.marketCapRaw ? Number(formatEther(BigInt(Math.floor(t.marketCapRaw)))) : 0;
-    const totalMc = 5000 + (extraEth * 1000); 
+    const totalMc = 5000 + (extraEth * 1000);
 
     // Generate deterministic dynamic PNL based on address hash (from -50.0% to +149.9%)
     const hashValue = parseInt(t.tokenAddress.slice(2, 10), 16) || 0;
@@ -136,7 +136,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
       uri: t.metadataUri,
     };
   });
-  
+
   // Create form state
   const [showOptions, setShowOptions] = useState(false);
   const [tokenName, setTokenName] = useState('');
@@ -145,7 +145,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
   const [twitterUrl, setTwitterUrl] = useState('');
   const [telegramUrl, setTelegramUrl] = useState('');
   const [websiteUrl, setWebsiteUrl] = useState('');
-  
+
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -163,14 +163,14 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
       toast.error('Please fill in all required fields (name, ticker, and image)');
       return;
     }
-    
+
     setDeployStatus('uploading');
     setDeployTx(null);
-    
+
     try {
       // 1. Upload image to IPFS
       const imageUri = await uploadFileToIPFS(selectedImage);
-      
+
       // 2. Upload metadata to IPFS
       const metadata = {
         name: tokenName,
@@ -191,7 +191,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
         functionName: 'createToken',
         args: [tokenName, ticker, metadataUri],
       });
-      
+
       setDeployTx(tx);
       setDeployStatus('success');
 
@@ -207,7 +207,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
       setTimeout(() => setDeployStatus('idle'), 2000);
     }
   };
-  
+
   if (isCreating) {
     return (
       <div className="h-full overflow-y-auto bg-background text-foreground relative">
@@ -235,7 +235,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
                     </div>
                   </div>
                 )}
-                
+
                 {deployStatus === 'confirming' && (
                   <div className="flex flex-col items-center gap-4">
                     <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -247,7 +247,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
                     </div>
                   </div>
                 )}
-                
+
                 {deployStatus === 'success' && (
                   <div className="flex flex-col items-center gap-4">
                     <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-success/10 text-success">
@@ -261,7 +261,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
                       <div className="rounded-lg bg-muted/50 p-2 text-xs break-all font-mono text-muted-foreground border border-border/50">
                         Tx: {deployTx}
                       </div>
-                      <button 
+                      <button
                         onClick={() => { setDeployStatus('idle'); setIsCreating(false); }}
                         className="w-full rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-colors"
                       >
@@ -287,7 +287,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
             <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
               <Rocket className="h-5 w-5" /> start a new coin
             </h1>
-            
+
             <div className="space-y-3">
               <div className="flex gap-3">
                 <div className="space-y-1 flex-1">
@@ -327,7 +327,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
                   <div className="absolute left-3 z-[1] box-content border border-black rounded-full h-[16px] w-[16px] overflow-hidden bg-[#ccff00] flex items-center justify-center pointer-events-none">
                     <RobinhoodIcon className="w-[10px] h-[10px] text-black" />
                   </div>
-                  <select 
+                  <select
                     defaultValue="robinhood"
                     className="w-full rounded-none border border-border bg-background pl-9 pr-8 py-2 text-sm focus:border-primary focus:outline-none appearance-none cursor-pointer relative z-0"
                   >
@@ -340,7 +340,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
 
               <div className="space-y-1">
                 <label className="text-xs font-bold text-muted-foreground uppercase">image</label>
-                <div 
+                <div
                   className="relative flex cursor-pointer items-center justify-center border border-dashed border-border bg-muted/20 px-6 py-4 text-center hover:border-primary/50"
                   onClick={() => document.getElementById('coin-image-upload')?.click()}
                 >
@@ -379,15 +379,15 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
               {showOptions && (
                 <div className="space-y-4 border-l-2 border-primary/20 pl-3">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1"><Twitter className="h-3 w-3"/> twitter link</label>
+                    <label className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1"><Twitter className="h-3 w-3" /> twitter link</label>
                     <input value={twitterUrl} onChange={e => setTwitterUrl(e.target.value)} type="text" className="w-full rounded-none border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none" />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1"><Send className="h-3 w-3"/> telegram link</label>
+                    <label className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1"><Send className="h-3 w-3" /> telegram link</label>
                     <input value={telegramUrl} onChange={e => setTelegramUrl(e.target.value)} type="text" className="w-full rounded-none border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none" />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1"><Globe className="h-3 w-3"/> website</label>
+                    <label className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1"><Globe className="h-3 w-3" /> website</label>
                     <input value={websiteUrl} onChange={e => setWebsiteUrl(e.target.value)} type="text" className="w-full rounded-none border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none" />
                   </div>
                 </div>
@@ -415,7 +415,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
   return (
     <div className="h-full overflow-y-auto bg-background text-foreground font-mono">
       <div className="mx-auto max-w-[1200px] space-y-4 px-2 pb-12 pt-4 md:px-4 md:py-6">
-        
+
         {/* Four.meme Style Banner */}
         <div className="flex flex-col md:flex-row gap-3 mb-6 w-full bg-card border border-border/50 rounded-xl p-3 shadow-sm">
           {/* Left Side: Create & Search */}
@@ -429,10 +429,10 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
                 <span className="text-xl tracking-widest uppercase">Create Token</span>
               </button>
             </div>
-            
+
             <div className="text-sm text-muted-foreground font-bold leading-snug">
-              The First Meme Fair Launch Platform on Base.<br/>
-              PUMP TO THE FOURMEME. <a href="#" className="underline hover:text-yellow-500 ml-1">How it works?</a>
+              The First Meme Fair Launch Platform on RobinHood Chain.<br />
+              PUMP TO THE AnyLauncher. <a href="#" className="underline hover:text-yellow-500 ml-1">How it works?</a>
             </div>
 
             <div className="flex w-full max-w-md items-center bg-background border border-border/50 rounded-full p-0.5 pl-3 hover:border-yellow-500/50 transition-colors focus-within:border-yellow-500/50 focus-within:ring-1 focus-within:ring-yellow-500/20">
@@ -444,7 +444,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
                 placeholder="Search Token"
                 className="flex-1 bg-transparent px-3 py-2 text-sm focus:outline-none placeholder:text-muted-foreground"
               />
-              <button 
+              <button
                 onClick={() => {
                   if (document.activeElement instanceof HTMLElement) {
                     document.activeElement.blur();
@@ -458,13 +458,13 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
           </div>
 
           {/* Right Side: Top 2 Trending Coins Banner */}
-          <div 
+          <div
             ref={sliderRef}
-            className="flex-1 flex overflow-x-auto scroll-smooth snap-x snap-mandatory md:overflow-visible gap-3 h-full min-h-[110px] pb-1 md:pb-0" 
+            className="flex-1 flex overflow-x-auto scroll-smooth snap-x snap-mandatory md:overflow-visible gap-3 h-full min-h-[110px] pb-1 md:pb-0"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            {tokens.slice(0, 2).map((token, idx) => (
-              <button 
+            {tokens.slice(0, 2).map((token: any, idx: number) => (
+              <button
                 key={token.id}
                 onClick={() => onSelectToken?.(token.id)}
                 className={`shrink-0 w-[85%] sm:w-[45%] md:w-auto md:flex-1 snap-center relative group overflow-hidden rounded-xl border border-border/50 text-left transition-all duration-500 hover:-translate-y-1 ${idx === 0 ? 'bg-gradient-to-br from-yellow-500/10 to-orange-500/10 hover:border-yellow-500/50 hover:shadow-[0_0_20px_rgba(234,179,8,0.2)]' : 'bg-gradient-to-br from-blue-500/10 to-purple-500/10 hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)]'}`}
@@ -476,9 +476,9 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
                 </div>
                 <div className="p-2 h-full flex flex-col justify-between">
                   <div className="flex items-start gap-2">
-                    <TokenImage 
-                      uri={token.uri} 
-                      name={token.name} 
+                    <TokenImage
+                      uri={token.uri}
+                      name={token.name}
                       className={`h-8 w-8 shrink-0 rounded-lg shadow-sm object-cover border-2 ${idx === 0 ? 'border-yellow-500/30 group-hover:border-yellow-500' : 'border-blue-500/30 group-hover:border-blue-500'} transition-colors`}
                     />
                     <div className="space-y-0.5 min-w-0 pr-6">
@@ -492,7 +492,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
                         ${token.ticker}
                         <span className="opacity-50">•</span>
                         <span className="flex items-center gap-1">
-                          CA: 
+                          CA:
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -507,7 +507,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="mt-2 pt-2 border-t border-border/50">
                     <div className="flex justify-between items-end mb-1.5">
                       <div>
@@ -528,7 +528,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
                         </span>
                       </div>
                       <div className="w-full h-1 bg-background/50 rounded-full overflow-hidden">
-                        <div 
+                        <div
                           className={`h-full transition-all duration-500 ${idx === 0 ? 'bg-primary' : 'bg-blue-400'}`}
                           style={{ width: `${Math.min(Math.max(((token.mc - 5000) / 69000) * 100, 0), 100)}%` }}
                         />
@@ -546,7 +546,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
         <div className="space-y-4 pt-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 text-xs font-bold uppercase overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
-              
+
               <div className="flex items-center gap-3 border-r border-border/50 pr-4">
                 {[
                   { id: 'last_trade', label: 'Last Trade' },
@@ -572,7 +572,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
               <div className="flex items-center gap-3">
                 <div className="relative flex items-center shrink-0">
                   <Filter className="text-muted-foreground mr-1.5 h-3.5 w-3.5" />
-                  <select 
+                  <select
                     value={filterTab}
                     onChange={(e) => setFilterTab(e.target.value as any)}
                     className="appearance-none bg-background border border-border/50 text-foreground px-2 py-1.5 pr-7 rounded-lg text-[10px] sm:text-xs font-bold outline-none focus:border-[#ccff00]/50 cursor-pointer"
@@ -591,16 +591,16 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
           {(() => {
             const q = searchQuery.trim().toLowerCase();
             let filtered = tokens;
-            
+
             if (category === 'watchlist') {
-              filtered = filtered.filter(t => watchlist.includes(t.id));
+              filtered = filtered.filter((t: any) => watchlist.includes(t.id));
             }
-            
+
             if (q) {
-              filtered = filtered.filter(t =>
-                  t.name.toLowerCase().includes(q) ||
-                  t.ticker.toLowerCase().includes(q) ||
-                  t.dev.toLowerCase().includes(q)
+              filtered = filtered.filter((t: any) =>
+                t.name.toLowerCase().includes(q) ||
+                t.ticker.toLowerCase().includes(q) ||
+                t.dev.toLowerCase().includes(q)
               );
             }
 
@@ -617,125 +617,124 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
             return (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
                 <AnimatePresence>
-                  {filtered.map((token) => (
-                <motion.button
-                  key={token.id}
-                  layout
-                  initial={{ opacity: 0, y: -16 }}
-                  animate={token.isPumping
-                    ? {
-                        opacity: 1, y: 0,
-                        boxShadow: ['0 0 0px rgba(234,179,8,0)', '0 0 18px rgba(234,179,8,0.7)', '0 0 0px rgba(234,179,8,0)'],
-                        borderColor: ['rgba(234,179,8,0.2)', 'rgba(234,179,8,1)', 'rgba(234,179,8,0.2)'],
+                  {filtered.map((token: any) => (
+                    <motion.button
+                      key={token.id}
+                      layout
+                      initial={{ opacity: 0, y: -16 }}
+                      animate={token.isPumping
+                        ? {
+                          opacity: 1, y: 0,
+                          boxShadow: ['0 0 0px rgba(234,179,8,0)', '0 0 18px rgba(234,179,8,0.7)', '0 0 0px rgba(234,179,8,0)'],
+                          borderColor: ['rgba(234,179,8,0.2)', 'rgba(234,179,8,1)', 'rgba(234,179,8,0.2)'],
+                        }
+                        : { opacity: 1, y: 0 }
                       }
-                    : { opacity: 1, y: 0 }
-                  }
-                  transition={token.isPumping
-                    ? { duration: 1.0, ease: 'easeInOut' }
-                    : { duration: 0.3, ease: 'easeOut' }
-                  }
-                  onClick={() => onSelectToken?.(token.id)}
-                  className={`group/item relative bg-card p-2 lg:p-3 border rounded-[14px] overflow-hidden transition-all duration-200 ease-out hover:bg-muted/30 focus-within:border-primary/70 text-left ${
-                    token.isPumping 
-                      ? 'border-primary shadow-sm' 
-                      : 'border-border hover:border-primary/40 hover:shadow-sm'
-                  }`}
-                >
-                  <div className="relative flex items-start gap-3 outline-none rounded-md w-full">
-                    {/* Left: Image Container */}
-                    <div className="relative shrink-0 p-0.5 h-[90px] w-[90px]">
-                      {/* Chain Badge (Robinhood) */}
-                      <div className="right-0 bottom-0 z-[1] box-content absolute border-[1.5px] border-background rounded-full h-[18px] w-[18px] overflow-hidden bg-[#ccff00] flex items-center justify-center">
-                        <RobinhoodIcon className="w-[11px] h-[11px] text-black" />
-                      </div>
-                      
-                      {/* Token Image */}
-                      <div className="relative ring-1 ring-border group-hover/item:ring-primary/30 rounded-lg h-[86px] w-[86px] overflow-hidden transition-all duration-300">
-                        <TokenImage 
-                          uri={token.uri} 
-                          name={token.name} 
-                          className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover/item:scale-[1.04]" 
-                        />
-                      </div>
-                    </div>
+                      transition={token.isPumping
+                        ? { duration: 1.0, ease: 'easeInOut' }
+                        : { duration: 0.3, ease: 'easeOut' }
+                      }
+                      onClick={() => onSelectToken?.(token.id)}
+                      className={`group/item relative bg-card p-2 lg:p-3 border rounded-[14px] overflow-hidden transition-all duration-200 ease-out hover:bg-muted/30 focus-within:border-primary/70 text-left ${token.isPumping
+                          ? 'border-primary shadow-sm'
+                          : 'border-border hover:border-primary/40 hover:shadow-sm'
+                        }`}
+                    >
+                      <div className="relative flex items-start gap-3 outline-none rounded-md w-full">
+                        {/* Left: Image Container */}
+                        <div className="relative shrink-0 p-0.5 h-[90px] w-[90px]">
+                          {/* Chain Badge (Robinhood) */}
+                          <div className="right-0 bottom-0 z-[1] box-content absolute border-[1.5px] border-background rounded-full h-[18px] w-[18px] overflow-hidden bg-[#ccff00] flex items-center justify-center">
+                            <RobinhoodIcon className="w-[11px] h-[11px] text-black" />
+                          </div>
 
-                    {/* Right: Content Container */}
-                    <div className="relative flex-1 flex flex-col min-w-0 min-h-[90px]">
-                      
-                      {/* Dynamic Pnl Badge */}
-                      <div className={`top-0 -right-2 lg:-right-3 absolute flex items-center gap-0.5 py-0.5 pr-[3px] pl-[7px] rounded-l-[15px] tabular-nums text-[9px] font-bold transition-colors duration-200 ${token.pnl >= 0 ? 'text-success bg-success/20' : 'text-destructive bg-destructive/20'}`}>
-                        <span>{token.pnl >= 0 ? '⬆' : '⬇'}</span>
-                        {token.pnl > 0 ? '+' : ''}{token.pnl}%
-                      </div>
+                          {/* Token Image */}
+                          <div className="relative ring-1 ring-border group-hover/item:ring-primary/30 rounded-lg h-[86px] w-[86px] overflow-hidden transition-all duration-300">
+                            <TokenImage
+                              uri={token.uri}
+                              name={token.name}
+                              className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover/item:scale-[1.04]"
+                            />
+                          </div>
+                        </div>
 
-                      {/* Header row: Name & Ticker */}
-                      <div className="flex items-center gap-1.5 mb-1 pr-12 min-w-0">
-                        <div className="truncate max-w-[100px]">
-                          <h2 className="inline text-[13px] font-bold text-foreground tracking-tight">{token.name}</h2>
-                        </div>
-                        <div className="truncate max-w-[60px]">
-                          <p className="inline text-[11px] font-semibold text-muted-foreground opacity-80 uppercase">${token.ticker}</p>
+                        {/* Right: Content Container */}
+                        <div className="relative flex-1 flex flex-col min-w-0 min-h-[90px]">
+
+                          {/* Dynamic Pnl Badge */}
+                          <div className={`top-0 -right-2 lg:-right-3 absolute flex items-center gap-0.5 py-0.5 pr-[3px] pl-[7px] rounded-l-[15px] tabular-nums text-[9px] font-bold transition-colors duration-200 ${token.pnl >= 0 ? 'text-success bg-success/20' : 'text-destructive bg-destructive/20'}`}>
+                            <span>{token.pnl >= 0 ? '⬆' : '⬇'}</span>
+                            {token.pnl > 0 ? '+' : ''}{token.pnl}%
+                          </div>
+
+                          {/* Header row: Name & Ticker */}
+                          <div className="flex items-center gap-1.5 mb-1 pr-12 min-w-0">
+                            <div className="truncate max-w-[100px]">
+                              <h2 className="inline text-[13px] font-bold text-foreground tracking-tight">{token.name}</h2>
+                            </div>
+                            <div className="truncate max-w-[60px]">
+                              <p className="inline text-[11px] font-semibold text-muted-foreground opacity-80 uppercase">${token.ticker}</p>
+                            </div>
+                          </div>
+
+                          {/* Category Badge & Watchlist */}
+                          <div className="flex flex-wrap items-center justify-between gap-1.5 mb-2 w-full pr-2">
+                            <div className="flex items-center justify-center bg-primary/10 border border-primary/20 px-1.5 rounded-full min-w-[37px] h-[14px] text-[9px] font-medium text-primary">
+                              Meme
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setWatchlist(prev => prev.includes(token.id) ? prev.filter(x => x !== token.id) : [...prev, token.id]);
+                                toast.success(watchlist.includes(token.id) ? "Removed from watchlist" : "Added to watchlist");
+                              }}
+                              className="p-1 hover:bg-muted rounded-full transition-colors z-10"
+                            >
+                              <Star className={`h-3 w-3 ${watchlist.includes(token.id) ? 'fill-primary text-primary' : 'text-muted-foreground'}`} />
+                            </button>
+                          </div>
+
+                          {/* Created By */}
+                          <div className="flex justify-between items-center gap-2 h-[12px] text-[10px] font-normal text-muted-foreground mt-auto mb-1">
+                            <div className="shrink-0">created by:</div>
+                            <div
+                              className="truncate underline decoration-muted-foreground/40 underline-offset-2 hover:text-foreground transition-colors cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toast.success("Address copied");
+                              }}
+                            >
+                              {token.dev}
+                            </div>
+                          </div>
+
+                          {/* Market Cap */}
+                          <div className="flex justify-between items-center gap-2 h-[12px] text-[10px] font-normal text-muted-foreground mb-1.5">
+                            <div className="shrink-0">Market Cap:</div>
+                            <div className="truncate tabular-nums text-foreground/90 font-bold">
+                              ${(token.mc >= 1000 ? (token.mc / 1000).toFixed(1) + 'K' : token.mc)}
+                            </div>
+                          </div>
+
+                          {/* Bonding Curve Progress */}
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="relative flex-1 bg-muted border border-border h-[6px] overflow-hidden -skew-x-[45deg]">
+                              <div
+                                className="z-[1] h-full bg-primary transition-all duration-500 ease-out"
+                                style={{ width: `${Math.min(Math.max(((token.mc - 5000) / 69000) * 100, 0), 100)}%` }}
+                              />
+                            </div>
+                            <div className="tabular-nums font-bold text-[9px] text-primary">
+                              {Math.min(Math.max(((token.mc - 5000) / 69000) * 100, 0), 100).toFixed(1)}%
+                            </div>
+                          </div>
+
                         </div>
                       </div>
-
-                      {/* Category Badge & Watchlist */}
-                      <div className="flex flex-wrap items-center justify-between gap-1.5 mb-2 w-full pr-2">
-                        <div className="flex items-center justify-center bg-primary/10 border border-primary/20 px-1.5 rounded-full min-w-[37px] h-[14px] text-[9px] font-medium text-primary">
-                          Meme
-                        </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setWatchlist(prev => prev.includes(token.id) ? prev.filter(x => x !== token.id) : [...prev, token.id]);
-                            toast.success(watchlist.includes(token.id) ? "Removed from watchlist" : "Added to watchlist");
-                          }}
-                          className="p-1 hover:bg-muted rounded-full transition-colors z-10"
-                        >
-                          <Star className={`h-3 w-3 ${watchlist.includes(token.id) ? 'fill-primary text-primary' : 'text-muted-foreground'}`} />
-                        </button>
-                      </div>
-
-                      {/* Created By */}
-                      <div className="flex justify-between items-center gap-2 h-[12px] text-[10px] font-normal text-muted-foreground mt-auto mb-1">
-                        <div className="shrink-0">created by:</div>
-                        <div 
-                          className="truncate underline decoration-muted-foreground/40 underline-offset-2 hover:text-foreground transition-colors cursor-pointer"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toast.success("Address copied");
-                          }}
-                        >
-                          {token.dev}
-                        </div>
-                      </div>
-
-                      {/* Market Cap */}
-                      <div className="flex justify-between items-center gap-2 h-[12px] text-[10px] font-normal text-muted-foreground mb-1.5">
-                        <div className="shrink-0">Market Cap:</div>
-                        <div className="truncate tabular-nums text-foreground/90 font-bold">
-                          ${(token.mc >= 1000 ? (token.mc / 1000).toFixed(1) + 'K' : token.mc)}
-                        </div>
-                      </div>
-
-                      {/* Bonding Curve Progress */}
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="relative flex-1 bg-muted border border-border h-[6px] overflow-hidden -skew-x-[45deg]">
-                          <div 
-                            className="z-[1] h-full bg-primary transition-all duration-500 ease-out" 
-                            style={{ width: `${Math.min(Math.max(((token.mc - 5000) / 69000) * 100, 0), 100)}%` }}
-                          />
-                        </div>
-                        <div className="tabular-nums font-bold text-[9px] text-primary">
-                          {Math.min(Math.max(((token.mc - 5000) / 69000) * 100, 0), 100).toFixed(1)}%
-                        </div>
-                      </div>
-
-                    </div>
-                  </div>
-                </motion.button>
-              ))}
-            </AnimatePresence>
-          </div>
+                    </motion.button>
+                  ))}
+                </AnimatePresence>
+              </div>
             );
           })()}
         </div>
