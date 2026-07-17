@@ -68,6 +68,27 @@ interface MoralisTokenOwnersResponse {
   total_supply?: string;
 }
 
+interface MoralisWalletToken {
+  token_address?: string;
+  symbol?: string;
+  name?: string;
+  logo?: string;
+  thumbnail?: string;
+  decimals?: number | string;
+  balance?: string;
+  possible_spam?: boolean;
+  verified_contract?: boolean;
+  balance_formatted?: string;
+  usd_price?: number;
+  usd_price_24hr_percent_change?: number;
+  usd_value?: number;
+}
+
+interface MoralisWalletTokensResponse {
+  result?: MoralisWalletToken[];
+  cursor?: string;
+}
+
 const chainMap: Record<string, string> = {
   ethereum: "eth",
   base: "base",
@@ -564,4 +585,46 @@ export async function fetchMoralisEnrichments(tokens: MarketToken[]): Promise<Pr
       },
     };
   }
+}
+
+export async function fetchMoralisWalletTokens(chainId: string, walletAddress: string) {
+  const apiKey = env("MORALIS_API_KEY");
+  if (!apiKey) throw new Error("Moralis API key is not configured.");
+
+  const moralisChain = chainMap[chainId];
+  if (!moralisChain) throw new Error(`Unsupported Moralis chain: ${chainId}`);
+
+  const response = await fetchJson<MoralisWalletTokensResponse>(
+    `https://deep-index.moralis.io/api/v2.2/wallets/${walletAddress}/tokens?chain=${moralisChain}&exclude_spam=true&exclude_unverified_contracts=true`,
+    {
+      headers: {
+        Accept: "application/json",
+        "X-API-Key": apiKey,
+      },
+    },
+  );
+
+  if (!response?.result) return [];
+
+  return response.result
+    .map((item) => {
+      const addressString = item.token_address?.toLowerCase();
+      if (!addressString) return null;
+
+      const balanceNum = numeric(item.balance_formatted) ?? 0;
+      if (balanceNum <= 0) return null;
+
+      return {
+        chainId,
+        tokenAddress: addressString,
+        symbol: item.symbol ?? "Unknown",
+        name: item.name ?? "Unknown Token",
+        decimals: Number(item.decimals ?? 18),
+        balance: balanceNum,
+        logoUrl: item.logo ?? item.thumbnail,
+        priceUsd: item.usd_price,
+        valueUsd: item.usd_value,
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
 }

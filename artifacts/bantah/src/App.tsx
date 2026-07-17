@@ -39,7 +39,8 @@ type Page =
   | 'docs'
   | 'token'
   | 'notifications'
-  | 'profile';
+  | 'profile'
+  | 'portfolio';
 type SearchReturnPage = Exclude<Page, 'search'>;
 
 interface RealtimeNotification {
@@ -62,6 +63,7 @@ const AdvertisePage = lazy(() => import('@/components/pages/advertise-page'));
 const NotificationsPage = lazy(() => import('@/components/pages/notifications-page'));
 const PointsPage = lazy(() => import('@/components/pages/points-page'));
 const ProfilePage = lazy(() => import('@/components/pages/profile-page'));
+const PortfolioPage = lazy(() => import('@/components/pages/portfolio-page'));
 const LeaderboardPage = lazy(() => import('@/components/pages/leaderboard-page'));
 const LaunchpadPage = lazy(() => import('@/components/pages/launcher-page'));
 const LaunchpadTradePage = lazy(() => import('@/components/pages/launcher-trade-page'));
@@ -71,6 +73,7 @@ const TokenPage = lazy(() => import('@/components/pages/token-page'));
 const WatchlistPage = lazy(() => import('@/components/pages/watchlist-page'));
 const DocsPage = lazy(() => import('@/components/pages/docs-page'));
 const VerifyPage = lazy(() => import('@/components/pages/verify-page'));
+const TwitterTrackPage = lazy(() => import('@/components/pages/x-track-page'));
 
 const CHAIN_LABELS: Record<string, string> = {
   solana: 'Solana',
@@ -141,7 +144,8 @@ function pageFromLocation(): Exclude<Page, 'token'> | null {
   if (pathname === '/advertise' || pathname === '/ads') return 'advertise';
   if (pathname === '/docs') return 'docs';
   if (pathname === '/notifications') return 'notifications';
-  if (pathname === '/profile' || pathname === '/portfolio') return 'profile';
+  if (pathname === '/profile') return 'profile';
+  if (pathname === '/portfolio') return 'portfolio';
   return null;
 }
 
@@ -182,6 +186,7 @@ function writePageLocation(page: Exclude<Page, 'token'>) {
     notifications: '/notifications',
     profile: '/profile',
     'twitter-track': '/twitter-track',
+    portfolio: '/portfolio',
   };
 
   url.pathname = paths[page] ?? '/';
@@ -486,6 +491,8 @@ function Terminal() {
         return <NotificationsPage />;
       case 'profile':
         return <ProfilePage />;
+      case 'portfolio':
+        return <PortfolioPage />;
       case 'watchlist':
         return (
           <WatchlistPage

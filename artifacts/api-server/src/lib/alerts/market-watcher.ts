@@ -4,6 +4,8 @@ import { fetchMobulaTokenTrades } from "../markets/mobula";
 import type { MarketToken, MarketTokenTrade } from "../markets/types";
 import { publishAlertSignal } from "./engine";
 import type { AlertChain, AlertSignal, TriggerKind } from "./types";
+import { getUsersWatchingMarket } from "../auth/watchlist-store";
+import { createUserNotification } from "../notifications/store";
 
 interface MarketSnapshot {
   signalScore: number;
@@ -405,6 +407,18 @@ async function publishAutomaticSignal(signal: AlertSignal, market: MarketToken):
     },
     "Automatic market alert published",
   );
+
+  const watcherIds = await getUsersWatchingMarket(market.id).catch(() => []);
+  for (const watcherId of watcherIds) {
+    await createUserNotification(watcherId, {
+      kind: "market_alert",
+      title: "Watchlist Alert",
+      body: `${market.symbol} just triggered a ${signal.trigger.kind.replace(/_/g, " ")} alert!`,
+      payload: { marketId: market.id, signal },
+    }).catch((err) => {
+      logger.warn({ err, userId: watcherId, marketId: market.id }, "Failed to notify watchlist user");
+    });
+  }
 
   return true;
 }

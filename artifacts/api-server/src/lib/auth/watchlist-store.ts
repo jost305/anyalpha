@@ -264,6 +264,16 @@ export async function listWatchlistIds(userId: string): Promise<string[]> {
   return rows.map((row) => row.marketId);
 }
 
+export async function getUsersWatchingMarket(marketId: string): Promise<string[]> {
+  const { db, userWatchlistItemsTable } = await getDbModule();
+  const rows = await db
+    .select({ userId: userWatchlistItemsTable.userId })
+    .from(userWatchlistItemsTable)
+    .where(eq(userWatchlistItemsTable.marketId, marketId));
+
+  return rows.map((row) => row.userId);
+}
+
 export async function upsertWatchlistItem(userId: string, market: MarketToken): Promise<WatchlistItem> {
   const trimmedUserId = userId.trim();
   const { db, userWatchlistItemsTable } = await getDbModule();

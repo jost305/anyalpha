@@ -26,7 +26,7 @@ export async function fetchAndSaveTrends() {
       return;
     }
 
-    const data = await res.json();
+    const data = await res.json() as any;
     
     // The response for /twitter/trends usually has { data: { trends: [...] } } or similar.
     const trendsList = data?.trends || data?.data?.trends || (Array.isArray(data) ? data : []);

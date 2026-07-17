@@ -641,6 +641,28 @@ async function fetchPairsForCandidates(candidates: Candidate[]): Promise<MarketT
   return (await Promise.all(requests)).flat();
 }
 
+export async function fetchMarketTokensByAddress(chainId: string, tokenAddresses: string[]): Promise<MarketToken[]> {
+  if (!tokenAddresses.length) return [];
+  const requests: Array<Promise<MarketToken[]>> = [];
+
+  for (let i = 0; i < tokenAddresses.length; i += MAX_BATCH_SIZE) {
+    const batch = tokenAddresses.slice(i, i + MAX_BATCH_SIZE);
+    const addresses = batch.join(",");
+
+    requests.push(
+      fetchJson<DexPair[]>(`/tokens/v1/${encodeURIComponent(chainId)}/${encodeURIComponent(addresses)}`)
+        .then((pairs) =>
+          asArray<DexPair>(pairs)
+            .map((pair) => normalizePair(pair))
+            .filter((market): market is NonNullable<typeof market> => market !== null),
+        )
+        .catch(() => []),
+    );
+  }
+
+  return (await Promise.all(requests)).flat();
+}
+
 async function searchPairs(q: string, chainId?: string): Promise<MarketToken[]> {
   const response = await fetchJson<DexSearchResponse>(`/latest/dex/search?q=${encodeURIComponent(q)}`);
   const markets = (response.pairs ?? [])

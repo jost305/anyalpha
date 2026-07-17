@@ -16,6 +16,7 @@ import twitterTrendsRouter from "./twitter-trends";
 import verificationRouter from "./verification";
 import walletTrackerRouter from "./wallet-tracker";
 import watchlistRouter from "./watchlist";
+import portfolioRouter from "./portfolio";
 
 const router: IRouter = Router();
 
@@ -36,5 +37,6 @@ router.use(twitterTrendsRouter);
 router.use(verificationRouter);
 router.use(walletTrackerRouter);
 router.use(watchlistRouter);
+router.use(portfolioRouter);
 
 export default router;

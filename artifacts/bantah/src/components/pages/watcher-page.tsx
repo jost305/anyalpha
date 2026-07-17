@@ -413,6 +413,14 @@ export default function WatcherPage() {
   const [importOpen, setImportOpen] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
   const [busyWalletId, setBusyWalletId] = useState<string | null>(null);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+
+  useEffect(() => {
+    const ack = localStorage.getItem('watcherDisclaimerAck');
+    if (!ack) {
+      setShowDisclaimer(true);
+    }
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -860,6 +868,36 @@ export default function WatcherPage() {
         onOpenChange={setImportOpen}
         open={importOpen}
       />
+
+      <Dialog open={showDisclaimer} onOpenChange={setShowDisclaimer}>
+        <DialogContent className="max-w-md bg-background border-border">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black text-primary">Beta Feature Warning</DialogTitle>
+          </DialogHeader>
+          <div className="text-sm text-muted-foreground space-y-4 pt-2">
+            <p>
+              The Watcher feature is currently in <strong className="text-foreground">Beta</strong>. Data is experimental and heavily delayed.
+            </p>
+            <p>
+              Wallet tracking depends on third-party indexed snapshots and heuristic aggregation. Do not use this information for trading or financial decisions.
+            </p>
+            <p>
+              By proceeding, you understand and accept these risks. Please thread with care!
+            </p>
+          </div>
+          <DialogFooter className="mt-4 sm:justify-start">
+            <button
+              onClick={() => {
+                localStorage.setItem('watcherDisclaimerAck', 'true');
+                setShowDisclaimer(false);
+              }}
+              className="w-full rounded-md bg-primary px-4 py-2 text-sm font-black text-black hover:bg-primary/90 focus:outline-none"
+            >
+              I Understand & Accept
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

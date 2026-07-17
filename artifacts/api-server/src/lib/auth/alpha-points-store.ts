@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { and, count, desc, eq, gt, gte, inArray, sql } from "drizzle-orm";
+import { createUserNotification } from "../notifications/store";
 
 const DAILY_LOGIN_POINTS = 50;
 const REFEREE_TERMINAL_JOIN_POINTS = 300;
@@ -545,6 +546,17 @@ export async function awardPoints(userId: string, options: AwardPointsOptions): 
         // Log silently
       });
     }).catch(() => {});
+  }
+
+  // Create a user notification for the points earned
+  if (finalPoints > 0 && !options.skipPassive) {
+    const actionFormatted = options.action.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    await createUserNotification(trimmedUserId, {
+      kind: "points_earned",
+      title: "Alpha Points Earned",
+      body: `You just earned ${new Intl.NumberFormat("en-US").format(finalPoints)} points for ${actionFormatted}!`,
+      payload: { action: options.action, points: finalPoints },
+    }).catch(() => null); // Ignore notification failures so it doesn't break the points transaction
   }
 
   return {

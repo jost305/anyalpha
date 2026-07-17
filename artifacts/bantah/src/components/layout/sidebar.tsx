@@ -5,7 +5,7 @@ const menuItems = [
   { emoji: '📊', label: 'Markets' },
   { emoji: '🚀', label: 'Launchpad' },
   { emoji: '⭐', label: 'Watchlist' },
-  { emoji: '🔭', label: 'Watcher' },
+  { emoji: '🔭', label: 'Watcher', extra: <span className="ml-auto text-[9px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-black uppercase tracking-wider">Beta</span> },
   { emoji: '🏆', label: 'Rewards', pulse: true },
   { emoji: '🥇', label: 'Leaderboard' },
   { emoji: '💼', label: 'Portfolio' },
@@ -110,7 +110,7 @@ export default function Sidebar({
             <div className="text-xs font-bold text-muted-foreground px-3 py-1 mt-1 uppercase tracking-wider">Main</div>
           )}
           {menuItems.map((item) => (
-            <MenuItem key={item.label} emoji={item.emoji} label={item.label} pulse={item.pulse} />
+            <MenuItem key={item.label} emoji={item.emoji} label={item.label} pulse={item.pulse} extra={item.extra} />
           ))}
         </div>
 

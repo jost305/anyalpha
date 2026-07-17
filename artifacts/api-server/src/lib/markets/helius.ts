@@ -86,6 +86,28 @@ interface SolanaMultipleAccountsResult {
   } | null>;
 }
 
+interface SolanaTokenAccountParsed {
+  account?: {
+    data?: {
+      parsed?: {
+        info?: {
+          mint?: string;
+          owner?: string;
+          tokenAmount?: {
+            decimals?: number;
+            uiAmount?: number;
+            uiAmountString?: string;
+          };
+        };
+      };
+    };
+  };
+}
+
+interface SolanaTokenAccountsByOwnerResult {
+  value?: SolanaTokenAccountParsed[];
+}
+
 interface SolanaSignatureInfo {
   signature?: string;
   blockTime?: number;
@@ -481,4 +503,34 @@ export async function fetchHeliusEnrichments(tokens: MarketToken[]): Promise<Pro
       },
     };
   }
+}
+
+export async function fetchSolanaWalletTokens(address: string) {
+  const rpc = solanaRpcUrl();
+  if (!rpc) throw new Error("Solana RPC is not configured.");
+
+  const response = await solanaRpc<SolanaTokenAccountsByOwnerResult>(rpc.url, "getTokenAccountsByOwner", [
+    address,
+    { programId: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" },
+    { encoding: "jsonParsed" },
+  ]);
+
+  if (!response?.value) return [];
+
+  return response.value
+    .map((item) => {
+      const info = item.account?.data?.parsed?.info;
+      if (!info?.mint || !info.tokenAmount) return null;
+
+      const balance = numeric(info.tokenAmount.uiAmountString ?? info.tokenAmount.uiAmount) ?? 0;
+      if (balance <= 0) return null;
+
+      return {
+        chainId: "solana",
+        tokenAddress: info.mint,
+        balance,
+        decimals: info.tokenAmount.decimals ?? 0,
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
 }
