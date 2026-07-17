@@ -153,7 +153,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
   const { writeContractAsync } = useWriteContract();
   const { chainId } = useAccount();
   const { switchChainAsync } = useSwitchChain();
-  const { authenticated, login } = usePrivy();
+  const { authenticated } = usePrivy();
   const launchpadAddress = "0x8058A276228f547D8d5e6B1B6A675646d2040555"; // DEPLOYED ADDRESS
 
   const handleCreateCoin = async () => {
