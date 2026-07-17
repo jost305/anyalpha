@@ -8,6 +8,7 @@ import { formatEther } from 'viem';
 import { LaunchpadABI } from '@/lib/contracts/LaunchpadABI';
 import { uploadFileToIPFS, uploadJSONToIPFS, getIPFSUrl } from '@/lib/ipfs';
 import { useLaunchpadPusher } from '@/lib/useLaunchpadPusher';
+import { robinhoodChainTestnet } from '@/lib/wagmi';
 import { usePrivy } from '@privy-io/react-auth';
 
 function RobinhoodIcon({ className }: { className?: string }) {
@@ -190,6 +191,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
         abi: LaunchpadABI,
         functionName: 'createToken',
         args: [tokenName, ticker, metadataUri],
+        chainId: robinhoodChainTestnet.id,
       });
 
       setDeployTx(tx);

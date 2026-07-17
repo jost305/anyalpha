@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { createChart, ColorType, AreaSeries } from 'lightweight-charts';
 import { LaunchpadABI } from '@/lib/contracts/LaunchpadABI';
 import { useLaunchpadPusher } from '@/lib/useLaunchpadPusher';
+import { robinhoodChainTestnet } from '@/lib/wagmi';
 import { usePrivy } from '@privy-io/react-auth';
 import { getIPFSUrl } from '@/lib/ipfs';
 
@@ -320,23 +321,24 @@ export default function LauncherTradePage({ tokenAddress, onBack }: LauncherTrad
     try {
       if (tradeMode === 'buy') {
         const value = parseEther(amount);
-        const minTokensOut = 0n; // Set a slippage tolerance in prod
+        const valueInWei = parseEther(amount);
         const tx = await writeContractAsync({
           address: launchpadAddress,
           abi: LaunchpadABI,
           functionName: 'buy',
-          args: [targetAddress as `0x${string}`, minTokensOut],
-          value,
+          args: [targetAddress as `0x${string}`, 0n],
+          value: valueInWei,
+          chainId: robinhoodChainTestnet.id,
         });
         toast.success(`Buy successful! Tx: ${tx}`, { id: loadingToast });
       } else {
-        const tokenAmount = parseEther(amount); // Assuming 18 decimals
-        const minEthOut = 0n;
+        const tokenAmountBigInt = parseEther(amount);
         const tx = await writeContractAsync({
           address: launchpadAddress,
           abi: LaunchpadABI,
           functionName: 'sell',
-          args: [targetAddress as `0x${string}`, tokenAmount, minEthOut],
+          args: [targetAddress as `0x${string}`, tokenAmountBigInt, 0n],
+          chainId: robinhoodChainTestnet.id,
         });
         toast.success(`Sell successful! Tx: ${tx}`, { id: loadingToast });
       }
