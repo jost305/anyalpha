@@ -423,7 +423,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setIsCreating(true)}
-                className="group relative inline-flex items-center justify-center px-5 py-2 font-black text-black bg-[#ccff00] rounded-lg overflow-hidden shadow-[0_0_15px_rgba(204,255,0,0.4)] hover:shadow-[0_0_25px_rgba(204,255,0,0.6)] transition-all duration-300 hover:-translate-y-0.5 border border-[#bbee00] w-fit"
+                className="group relative inline-flex items-center justify-center px-5 py-2 font-black text-primary-foreground bg-primary rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 border border-transparent w-fit"
               >
                 <span className="mr-2 text-2xl animate-pulse">🚀</span>
                 <span className="text-xl tracking-widest uppercase">Create Token</span>
@@ -529,7 +529,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
                       </div>
                       <div className="w-full h-1 bg-background/50 rounded-full overflow-hidden">
                         <div 
-                          className={`h-full transition-all duration-500 ${idx === 0 ? 'bg-[#ccff00]' : 'bg-blue-400'}`}
+                          className={`h-full transition-all duration-500 ${idx === 0 ? 'bg-primary' : 'bg-blue-400'}`}
                           style={{ width: `${Math.min(Math.max(((token.mc - 5000) / 69000) * 100, 0), 100)}%` }}
                         />
                       </div>
@@ -635,22 +635,22 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
                     : { duration: 0.3, ease: 'easeOut' }
                   }
                   onClick={() => onSelectToken?.(token.id)}
-                  className={`group/item relative bg-[#141414]/90 p-2 lg:p-3 border rounded-[14px] overflow-hidden transition-all duration-200 ease-out hover:bg-white/5 focus-within:border-yellow-500/70 text-left ${
+                  className={`group/item relative bg-card p-2 lg:p-3 border rounded-[14px] overflow-hidden transition-all duration-200 ease-out hover:bg-muted/30 focus-within:border-primary/70 text-left ${
                     token.isPumping 
-                      ? 'border-yellow-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_10px_28px_-16px_rgba(234,179,8,0.35)]' 
-                      : 'border-white/10 hover:border-yellow-500/40 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_10px_28px_-16px_rgba(234,179,8,0.35)]'
+                      ? 'border-primary shadow-sm' 
+                      : 'border-border hover:border-primary/40 hover:shadow-sm'
                   }`}
                 >
                   <div className="relative flex items-start gap-3 outline-none rounded-md w-full">
                     {/* Left: Image Container */}
                     <div className="relative shrink-0 p-0.5 h-[90px] w-[90px]">
                       {/* Chain Badge (Robinhood) */}
-                      <div className="right-0 bottom-0 z-[1] box-content absolute border-[1.5px] border-black rounded-full h-[18px] w-[18px] overflow-hidden bg-[#ccff00] flex items-center justify-center">
-                        <RobinhoodIcon className="w-[11px] h-[11px] text-black" />
+                      <div className="right-0 bottom-0 z-[1] box-content absolute border-[1.5px] border-background rounded-full h-[18px] w-[18px] overflow-hidden bg-primary flex items-center justify-center">
+                        <RobinhoodIcon className="w-[11px] h-[11px] text-primary-foreground" />
                       </div>
                       
                       {/* Token Image */}
-                      <div className="relative ring-1 ring-white/5 group-hover/item:ring-yellow-500/30 rounded-lg h-[86px] w-[86px] overflow-hidden transition-all duration-300">
+                      <div className="relative ring-1 ring-border group-hover/item:ring-primary/30 rounded-lg h-[86px] w-[86px] overflow-hidden transition-all duration-300">
                         <TokenImage 
                           uri={token.uri} 
                           name={token.name} 
@@ -663,7 +663,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
                     <div className="relative flex-1 flex flex-col min-w-0 min-h-[90px]">
                       
                       {/* Dynamic Pnl Badge */}
-                      <div className={`top-0 -right-2 lg:-right-3 absolute flex items-center gap-0.5 py-0.5 pr-[3px] pl-[7px] rounded-l-[15px] tabular-nums text-[9px] font-bold transition-colors duration-200 ${token.pnl >= 0 ? 'text-green-500 bg-green-500/20' : 'text-red-500 bg-red-500/20'}`}>
+                      <div className={`top-0 -right-2 lg:-right-3 absolute flex items-center gap-0.5 py-0.5 pr-[3px] pl-[7px] rounded-l-[15px] tabular-nums text-[9px] font-bold transition-colors duration-200 ${token.pnl >= 0 ? 'text-success bg-success/20' : 'text-destructive bg-destructive/20'}`}>
                         <span>{token.pnl >= 0 ? '⬆' : '⬇'}</span>
                         {token.pnl > 0 ? '+' : ''}{token.pnl}%
                       </div>
@@ -671,7 +671,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
                       {/* Header row: Name & Ticker */}
                       <div className="flex items-center gap-1.5 mb-1 pr-12 min-w-0">
                         <div className="truncate max-w-[100px]">
-                          <h2 className="inline text-[13px] font-bold text-white tracking-tight">{token.name}</h2>
+                          <h2 className="inline text-[13px] font-bold text-foreground tracking-tight">{token.name}</h2>
                         </div>
                         <div className="truncate max-w-[60px]">
                           <p className="inline text-[11px] font-semibold text-muted-foreground opacity-80 uppercase">${token.ticker}</p>
@@ -680,7 +680,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
 
                       {/* Category Badge & Watchlist */}
                       <div className="flex flex-wrap items-center justify-between gap-1.5 mb-2 w-full pr-2">
-                        <div className="flex items-center justify-center bg-yellow-500/10 border border-yellow-500/20 px-1.5 rounded-full min-w-[37px] h-[14px] text-[9px] font-medium text-yellow-500">
+                        <div className="flex items-center justify-center bg-primary/10 border border-primary/20 px-1.5 rounded-full min-w-[37px] h-[14px] text-[9px] font-medium text-primary">
                           Meme
                         </div>
                         <button
@@ -689,9 +689,9 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
                             setWatchlist(prev => prev.includes(token.id) ? prev.filter(x => x !== token.id) : [...prev, token.id]);
                             toast.success(watchlist.includes(token.id) ? "Removed from watchlist" : "Added to watchlist");
                           }}
-                          className="p-1 hover:bg-white/10 rounded-full transition-colors z-10"
+                          className="p-1 hover:bg-muted rounded-full transition-colors z-10"
                         >
-                          <Star className={`h-3 w-3 ${watchlist.includes(token.id) ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground'}`} />
+                          <Star className={`h-3 w-3 ${watchlist.includes(token.id) ? 'fill-primary text-primary' : 'text-muted-foreground'}`} />
                         </button>
                       </div>
 
@@ -699,7 +699,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
                       <div className="flex justify-between items-center gap-2 h-[12px] text-[10px] font-normal text-muted-foreground mt-auto mb-1">
                         <div className="shrink-0">created by:</div>
                         <div 
-                          className="truncate underline decoration-muted-foreground/40 underline-offset-2 hover:text-white transition-colors cursor-pointer"
+                          className="truncate underline decoration-muted-foreground/40 underline-offset-2 hover:text-foreground transition-colors cursor-pointer"
                           onClick={(e) => {
                             e.stopPropagation();
                             toast.success("Address copied");
@@ -712,20 +712,20 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
                       {/* Market Cap */}
                       <div className="flex justify-between items-center gap-2 h-[12px] text-[10px] font-normal text-muted-foreground mb-1.5">
                         <div className="shrink-0">Market Cap:</div>
-                        <div className="truncate tabular-nums text-white/90 font-bold">
+                        <div className="truncate tabular-nums text-foreground/90 font-bold">
                           ${(token.mc >= 1000 ? (token.mc / 1000).toFixed(1) + 'K' : token.mc)}
                         </div>
                       </div>
 
                       {/* Bonding Curve Progress */}
                       <div className="flex items-center justify-center gap-2">
-                        <div className="relative flex-1 bg-black border border-[#131D16] h-[6px] overflow-hidden -skew-x-[45deg]">
+                        <div className="relative flex-1 bg-muted border border-border h-[6px] overflow-hidden -skew-x-[45deg]">
                           <div 
-                            className="z-[1] h-full bg-[#ccff00] transition-all duration-500 ease-out" 
+                            className="z-[1] h-full bg-primary transition-all duration-500 ease-out" 
                             style={{ width: `${Math.min(Math.max(((token.mc - 5000) / 69000) * 100, 0), 100)}%` }}
                           />
                         </div>
-                        <div className="tabular-nums font-bold text-[9px] text-[#ccff00]">
+                        <div className="tabular-nums font-bold text-[9px] text-primary">
                           {Math.min(Math.max(((token.mc - 5000) / 69000) * 100, 0), 100).toFixed(1)}%
                         </div>
                       </div>

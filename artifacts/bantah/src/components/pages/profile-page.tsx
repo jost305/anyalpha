@@ -436,14 +436,6 @@ export default function ProfilePage() {
                 <span>Joined {formatPrivyDate(user.createdAt)}</span>
               </div>
             </div>
-
-            <button
-              onClick={() => void logout()}
-              className="flex w-fit items-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-1.5 text-xs font-bold text-destructive transition hover:bg-destructive hover:text-destructive-foreground"
-            >
-              <LogOut size={13} />
-              Sign Out
-            </button>
           </div>
 
           <div className="mt-5 flex flex-wrap gap-x-8 gap-y-4 border-t border-border/50 pt-4">
