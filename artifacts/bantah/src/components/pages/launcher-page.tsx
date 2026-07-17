@@ -288,31 +288,33 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
               <Rocket className="h-5 w-5" /> start a new coin
             </h1>
             
-            <div className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-muted-foreground uppercase">name</label>
-                <input
-                  type="text"
-                  value={tokenName}
-                  onChange={(e) => setTokenName(e.target.value)}
-                  className="w-full rounded-none border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
-                />
-              </div>
+            <div className="space-y-3">
+              <div className="flex gap-3">
+                <div className="space-y-1 flex-1">
+                  <label className="text-xs font-bold text-muted-foreground uppercase">name</label>
+                  <input
+                    type="text"
+                    value={tokenName}
+                    onChange={(e) => setTokenName(e.target.value)}
+                    className="w-full rounded-none border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                  />
+                </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-muted-foreground uppercase">ticker</label>
-                <input
-                  type="text"
-                  value={ticker}
-                  onChange={(e) => setTicker(e.target.value)}
-                  className="w-full rounded-none border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
-                />
+                <div className="space-y-1 flex-[0.5]">
+                  <label className="text-xs font-bold text-muted-foreground uppercase">ticker</label>
+                  <input
+                    type="text"
+                    value={ticker}
+                    onChange={(e) => setTicker(e.target.value)}
+                    className="w-full rounded-none border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none uppercase"
+                  />
+                </div>
               </div>
 
               <div className="space-y-1">
                 <label className="text-xs font-bold text-muted-foreground uppercase">description</label>
                 <textarea
-                  rows={4}
+                  rows={2}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   className="w-full rounded-none border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none resize-none"
@@ -339,7 +341,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
               <div className="space-y-1">
                 <label className="text-xs font-bold text-muted-foreground uppercase">image</label>
                 <div 
-                  className="relative flex cursor-pointer items-center justify-center border border-dashed border-border bg-muted/20 px-6 py-8 text-center hover:border-primary/50"
+                  className="relative flex cursor-pointer items-center justify-center border border-dashed border-border bg-muted/20 px-6 py-4 text-center hover:border-primary/50"
                   onClick={() => document.getElementById('coin-image-upload')?.click()}
                 >
                   <input
@@ -356,7 +358,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
                     }}
                   />
                   {previewUrl ? (
-                    <img src={previewUrl} alt="Preview" className="h-24 w-24 object-cover border border-border" />
+                    <img src={previewUrl} alt="Preview" className="h-16 w-16 object-cover border border-border" />
                   ) : (
                     <div className="flex flex-col items-center gap-2">
                       <ImagePlus className="h-6 w-6 text-muted-foreground" />
@@ -391,12 +393,14 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
                 </div>
               )}
 
-              <button
-                onClick={handleCreateCoin}
-                className="w-full bg-[#ccff00] py-3 text-sm font-black text-black hover:bg-[#bbee00] mt-4 shadow-[0_0_15px_rgba(204,255,0,0.4)]"
-              >
-                create coin
-              </button>
+              <div className="sticky bottom-4 left-0 right-0 z-10 pt-4 mt-4 bg-background/80 backdrop-blur-sm md:static md:bg-transparent md:backdrop-blur-none md:pt-0 md:mt-4">
+                <button
+                  onClick={handleCreateCoin}
+                  className="w-full bg-[#ccff00] py-3 text-sm font-black text-black hover:bg-[#bbee00] shadow-[0_0_15px_rgba(204,255,0,0.4)]"
+                >
+                  create coin
+                </button>
+              </div>
               <div className="text-center text-xs text-muted-foreground">
                 cost to deploy: ~0.0001 ETH
               </div>

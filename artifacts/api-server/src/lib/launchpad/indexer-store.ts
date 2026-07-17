@@ -1,4 +1,6 @@
 import { logger } from "../logger";
+import { getPrivyClient } from "../auth/privy-auth";
+import { awardPoints } from "../auth/alpha-points-store";
 
 type DbModule = typeof import("@workspace/db");
 
@@ -42,6 +44,28 @@ export async function insertLaunchpadToken(
       metadataUri,
       devAddress: devAddress.toLowerCase(),
     }).catch((err) => logger.error({ err }, "Failed to publish token pusher event"));
+
+    // Award AlphaPoints for token creation
+    try {
+      const client = getPrivyClient();
+      if (client) {
+        const user = await client.getUserByWalletAddress(devAddress);
+        if (user && user.id) {
+          await awardPoints(user.id, {
+            action: "launchpad_token_created",
+            basePoints: 500,
+            source: "launchpad",
+            relatedEntityId: tokenAddress.toLowerCase(),
+            idempotencyKey: `launchpad-token-created:${tokenAddress.toLowerCase()}`,
+            applyMultiplier: true,
+          });
+          logger.info({ userId: user.id, tokenAddress }, "Awarded AlphaPoints for token creation");
+        }
+      }
+    } catch (pointsErr: any) {
+      // Wallet might not be linked to any privy user, ignore
+      logger.debug({ err: pointsErr.message, devAddress }, "Could not award points for token creation");
+    }
 
   } catch (error: any) {
     logger.error({ error: String(error), details: error?.message }, "Failed to insert Launchpad Token");
@@ -94,6 +118,28 @@ export async function insertLaunchpadTrade(
       tokenAmountRaw,
       txHash,
     }).catch((err) => logger.error({ err }, "Failed to publish trade pusher event"));
+    
+    // Award AlphaPoints for trade
+    try {
+      const client = getPrivyClient();
+      if (client) {
+        const user = await client.getUserByWalletAddress(userAddress);
+        if (user && user.id) {
+          await awardPoints(user.id, {
+            action: "launchpad_trade",
+            basePoints: 50,
+            source: "launchpad",
+            relatedEntityId: txHash,
+            idempotencyKey: `launchpad-trade:${txHash}:${user.id}`,
+            applyMultiplier: true,
+          });
+          logger.info({ userId: user.id, txHash }, "Awarded AlphaPoints for launchpad trade");
+        }
+      }
+    } catch (pointsErr: any) {
+      // Wallet might not be linked to any privy user, ignore
+      logger.debug({ err: pointsErr.message, userAddress }, "Could not award points for trade");
+    }
     
   } catch (error: any) {
     logger.error({ error: String(error), details: error?.message }, "Failed to insert Launchpad Trade");
