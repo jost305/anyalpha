@@ -645,8 +645,8 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
                     {/* Left: Image Container */}
                     <div className="relative shrink-0 p-0.5 h-[90px] w-[90px]">
                       {/* Chain Badge (Robinhood) */}
-                      <div className="right-0 bottom-0 z-[1] box-content absolute border-[1.5px] border-background rounded-full h-[18px] w-[18px] overflow-hidden bg-primary flex items-center justify-center">
-                        <RobinhoodIcon className="w-[11px] h-[11px] text-primary-foreground" />
+                      <div className="right-0 bottom-0 z-[1] box-content absolute border-[1.5px] border-background rounded-full h-[18px] w-[18px] overflow-hidden bg-[#ccff00] flex items-center justify-center">
+                        <RobinhoodIcon className="w-[11px] h-[11px] text-black" />
                       </div>
                       
                       {/* Token Image */}
