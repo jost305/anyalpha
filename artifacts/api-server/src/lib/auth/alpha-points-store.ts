@@ -532,6 +532,21 @@ export async function awardPoints(userId: string, options: AwardPointsOptions): 
     }
   }
 
+  if (finalPoints > 0) {
+    import("../realtime/pusher").then(({ publishRealtimeEvent, userRealtimeChannel }) => {
+      publishRealtimeEvent(userRealtimeChannel(trimmedUserId), "PointsAwarded", {
+        action: options.action,
+        points: finalPoints,
+        basePoints: options.basePoints,
+        multiplierBps,
+        relatedEntityId: options.relatedEntityId,
+        source: options.source ?? "system",
+      }).catch((err) => {
+        // Log silently
+      });
+    }).catch(() => {});
+  }
+
   return {
     awarded: true,
     action: options.action,
