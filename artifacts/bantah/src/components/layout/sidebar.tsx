@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 const menuItems = [
   { emoji: '📊', label: 'Markets' },
   { emoji: '🚀', label: 'Launchpad' },
+  { emoji: '🕳️', label: 'Trenches' },
   { emoji: '⭐', label: 'Watchlist' },
   { emoji: '🔭', label: 'Watcher', extra: <span className="ml-auto text-[9px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-black uppercase tracking-wider">Beta</span> },
   { emoji: '🏆', label: 'Rewards', pulse: true },

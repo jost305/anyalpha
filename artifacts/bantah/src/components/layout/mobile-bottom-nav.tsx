@@ -14,8 +14,8 @@ export default function MobileBottomNav({ activeTab, onTabChange }: MobileBottom
     : { type: 'spring', stiffness: 540, damping: 34, mass: 0.62 } as const;
   const tabs: Array<{ id: string; label: string; emoji: string }> = [
     { id: 'markets', label: 'Markets', emoji: '\u{1F4CA}' },
-    { id: 'launchpad', label: 'Trenches', emoji: '\u{1F573}\uFE0F' },
-    { id: 'launcher', label: 'Launcher', emoji: '\u{1F680}' },
+    { id: 'launchpad', label: 'Launchpad', emoji: '🚀' },
+    { id: 'trenches', label: 'Trenches', emoji: '🕳️' },
     { id: 'search', label: 'Search', emoji: '\u{1F50D}' },
     { id: 'watcher', label: 'Watcher', emoji: '\u{1F52D}' },
     { id: 'leaderboard', label: 'Leaderboard', emoji: '\u{1F947}' },

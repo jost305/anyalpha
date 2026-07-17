@@ -200,17 +200,17 @@ function SummaryCard({
         };
 
   return (
-    <div className="surface-sheen rounded-2xl border border-border bg-card/80 p-2.5 shadow-sm sm:p-3">
+    <div className="surface-sheen rounded-xl border border-border bg-card/80 p-2 shadow-sm sm:p-2.5">
       <div className="flex items-center gap-2 text-muted-foreground">
-        <span className={cn('flex h-7 w-7 items-center justify-center rounded-full sm:h-8 sm:w-8', accentClasses.icon)}>
-          <Icon size={14} />
+        <span className={cn('flex h-6 w-6 items-center justify-center rounded-full sm:h-7 sm:w-7', accentClasses.icon)}>
+          <Icon size={12} />
         </span>
-        <span className={cn('text-[10px] font-semibold uppercase tracking-[0.14em] sm:text-[11px] sm:tracking-[0.18em]', accentClasses.label)}>
+        <span className={cn('text-[9px] font-semibold uppercase tracking-[0.14em] sm:text-[10px]', accentClasses.label)}>
           {label}
         </span>
       </div>
-      <div className={cn('mt-2 text-base font-black tracking-tight sm:mt-3 sm:text-lg', accentClasses.value)}>{value}</div>
-      <div className="mt-1 hidden text-xs text-muted-foreground sm:block">{hint}</div>
+      <div className={cn('mt-1.5 text-sm font-black tracking-tight sm:mt-2 sm:text-base', accentClasses.value)}>{value}</div>
+      <div className="mt-0.5 hidden text-[10px] leading-tight text-muted-foreground sm:block">{hint}</div>
     </div>
   );
 }
