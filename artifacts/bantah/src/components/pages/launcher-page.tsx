@@ -19,6 +19,14 @@ function RobinhoodIcon({ className }: { className?: string }) {
   );
 }
 
+function XIcon({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+    </svg>
+  );
+}
+
 function TokenImage({ uri, name, className }: { uri: string; name: string; className?: string }) {
   const { data: imageUrl } = useQuery({
     queryKey: ['token-image-v3', uri],
@@ -109,6 +117,17 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
       const res = await fetch(`/api/launchpad/tokens?sort=${filterTab}`);
       if (!res.ok) throw new Error('Failed to fetch tokens');
       return res.json();
+    },
+    refetchInterval: 60000,
+  });
+
+  const { data: twitterTrends = [] } = useQuery({
+    queryKey: ['twitter-trends'],
+    queryFn: async () => {
+      const res = await fetch('/api/twitter-trends');
+      if (!res.ok) throw new Error('Failed to fetch trends');
+      const data = await res.json();
+      return data.trends || [];
     },
     refetchInterval: 60000,
   });
@@ -549,6 +568,34 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
           </div>
         </div>
 
+        {/* Twitter Trends Ticker */}
+        {twitterTrends.length > 0 && (
+          <div className="w-full bg-primary/10 border-y border-primary/20 py-2.5 overflow-hidden flex items-center relative mt-4">
+            <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background to-transparent z-10" />
+            <div className="flex items-center gap-2 px-3 shrink-0 text-primary font-bold text-xs">
+              <XIcon className="w-3.5 h-3.5" /> TRENDING ON X:
+            </div>
+            <div className="flex animate-marquee whitespace-nowrap items-center gap-6 pr-6">
+              {[...twitterTrends, ...twitterTrends].map((trend: any, i: number) => (
+                <button
+                  key={`${trend.id}-${i}`}
+                  onClick={() => {
+                    setCategory('x_trend');
+                    setSearchQuery(trend.name.replace(/^#/, ''));
+                  }}
+                  className="flex items-center gap-1.5 hover:text-primary transition-colors text-xs font-medium cursor-pointer"
+                >
+                  <span className="text-muted-foreground">{trend.rank}.</span>
+                  <span className="text-foreground">{trend.name}</span>
+                  <span className="bg-background border border-border px-1.5 py-0.5 rounded text-[10px] text-muted-foreground font-bold">
+                    {trend.tokenCount} {trend.tokenCount === 1 ? 'token' : 'tokens'}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent z-10" />
+          </div>
+        )}
 
         {/* Filters */}
         <div className="space-y-4 pt-4">
@@ -560,7 +607,8 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
                   { id: 'last_trade', label: 'Last Trade' },
                   { id: 'creation_time', label: 'Creation Time' },
                   { id: 'heating_up', label: 'Heating Up' },
-                  { id: 'watchlist', label: 'Watchlist' }
+                  { id: 'watchlist', label: 'Watchlist' },
+                  { id: 'x_trend', label: 'X Trend' }
                 ].map(cat => (
                   <button
                     key={cat.id}
@@ -572,25 +620,10 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
                     }}
                     className={`whitespace-nowrap hover:text-primary flex items-center gap-1 ${category === cat.id ? 'text-primary underline' : 'text-muted-foreground'}`}
                   >
+                    {cat.id === 'x_trend' && <XIcon className="w-3.5 h-3.5" />}
                     {cat.label}
                   </button>
                 ))}
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="relative flex items-center shrink-0">
-                  <Filter className="text-muted-foreground mr-1.5 h-3.5 w-3.5" />
-                  <select
-                    value={filterTab}
-                    onChange={(e) => setFilterTab(e.target.value as any)}
-                    className="appearance-none bg-background border border-border/50 text-foreground px-2 py-1.5 pr-7 rounded-lg text-[10px] sm:text-xs font-bold outline-none focus:border-[#ccff00]/50 cursor-pointer"
-                  >
-                    <option value="bump">Bump Order</option>
-                    <option value="reply">Last Reply</option>
-                    <option value="creation">Creation Time</option>
-                  </select>
-                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
-                </div>
               </div>
             </div>
           </div>
@@ -598,6 +631,57 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
           {/* Token Grid */}
           {(() => {
             const q = searchQuery.trim().toLowerCase();
+
+            if (category === 'x_trend' && !q) {
+              return (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+                  <AnimatePresence>
+                    {(twitterTrends.length > 0 ? twitterTrends : [
+                      { id: 'mock1', name: '#Bitcoin', rank: 1, tokenCount: 142, mockTweet: "Bitcoin is forming a massive bull flag on the 4H chart. Send it higher! 🚀🔥" },
+                      { id: 'mock2', name: 'Ethereum', rank: 2, tokenCount: 89, mockTweet: "The ETH ETFs are seeing record inflows. Vitalik just posted something huge! 🦇🔊" },
+                      { id: 'mock3', name: '#AI', rank: 3, tokenCount: 56, mockTweet: "OpenAI's latest update is blowing my mind. AI agents are the absolute future of web3. 🤖" },
+                      { id: 'mock4', name: 'Solana', rank: 4, tokenCount: 45, mockTweet: "Solana DeFi volume just flipped Ethereum mainnet again. The casino is fully open! 🎰" },
+                      { id: 'mock5', name: '#MemeCoinSeason', rank: 5, tokenCount: 12, mockTweet: "If you aren't bidding new memes right now you hate money. The timeline is insane today! 🐶" },
+                    ]).map((trend: any) => (
+                      <motion.button
+                        key={trend.id}
+                        layout
+                        initial={{ opacity: 0, y: -16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        onClick={() => setSearchQuery(trend.name.replace(/^#/, ''))}
+                        className="bg-background/50 border border-border/50 rounded-xl p-4 text-left hover:border-primary/50 transition-colors flex flex-col gap-3 group relative overflow-hidden"
+                      >
+                        <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                          <XIcon className="w-12 h-12" />
+                        </div>
+                        <div className="flex items-center gap-3 relative z-10">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                            <span className="text-primary font-black text-sm">#{trend.rank}</span>
+                          </div>
+                          <div>
+                            <div className="font-black text-sm text-foreground group-hover:text-primary transition-colors line-clamp-1">{trend.name}</div>
+                            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Trending Topic</div>
+                          </div>
+                        </div>
+                        
+                        {/* Tweet Excerpt */}
+                        <div className="relative z-10 mt-1 mb-1 p-3 bg-black/40 rounded-lg border border-white/5 text-xs text-foreground/90 italic leading-relaxed">
+                           "{trend.mockTweet || `People are going crazy about ${trend.name} right now on X. The timeline is flooded with this meta!`}"
+                        </div>
+
+                        <div className="text-xs text-muted-foreground relative z-10 mt-auto pt-1">
+                          <span className="bg-primary/20 text-primary px-2 py-0.5 rounded text-[10px] font-black mr-2">
+                            {trend.tokenCount} {trend.tokenCount === 1 ? 'COIN' : 'COINS'}
+                          </span>
+                          launched under this meta
+                        </div>
+                      </motion.button>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              );
+            }
+
             let filtered = tokens;
 
             if (category === 'watchlist') {
@@ -610,6 +694,36 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
                 t.ticker.toLowerCase().includes(q) ||
                 t.dev.toLowerCase().includes(q)
               );
+            }
+
+            if (q && category === 'x_trend' && filtered.length === 0) {
+              const displayQ = q.replace(/^#/, '');
+              filtered = [
+                {
+                  id: `0xmock_${q}_1`,
+                  name: `${displayQ.charAt(0).toUpperCase() + displayQ.slice(1)} Coin`,
+                  ticker: displayQ.substring(0, 4).toUpperCase(),
+                  dev: '0xmock...1234',
+                  mc: 15000,
+                  ath: 25000,
+                  replies: 12,
+                  isPumping: true,
+                  pnl: 45.2,
+                  uri: '',
+                },
+                {
+                  id: `0xmock_${q}_2`,
+                  name: `Based ${displayQ.charAt(0).toUpperCase() + displayQ.slice(1)}`,
+                  ticker: `B${displayQ.substring(0, 3).toUpperCase()}`,
+                  dev: '0x13D7...39a7',
+                  mc: 8000,
+                  ath: 12000,
+                  replies: 5,
+                  isPumping: false,
+                  pnl: -12.4,
+                  uri: '',
+                }
+              ];
             }
 
             if (filtered.length === 0) {

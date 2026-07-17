@@ -7,6 +7,7 @@ import { startTelegramWebhook } from "./lib/telegram/startup";
 import { startXFilteredStreamWorker } from "./lib/twitter-track/stream";
 import { startPublicWalletDiscoveryWorker } from "./lib/wallet-tracker/discovery-worker";
 import { startLaunchpadIndexer } from "./lib/launchpad/indexer-worker";
+import { startTwitterTrendsWorker } from "./lib/twitter-trends/worker";
 
 const rawPort = process.env["PORT"];
 
@@ -35,4 +36,5 @@ app.listen(port, (err) => {
   startXFilteredStreamWorker();
   startPublicWalletDiscoveryWorker();
   startLaunchpadIndexer();
+  startTwitterTrendsWorker();
 });

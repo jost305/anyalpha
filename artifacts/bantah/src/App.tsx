@@ -26,6 +26,7 @@ import { softHaptic } from '@/lib/mobile-feedback';
 type Page =
   | 'markets'
   | 'launchpad'
+  | 'launchpad-trade'
   | 'watcher'
   | 'twitter-track'
   | 'verify'
@@ -38,9 +39,7 @@ type Page =
   | 'docs'
   | 'token'
   | 'notifications'
-  | 'profile'
-  | 'launcher'
-  | 'launcher-trade';
+  | 'profile';
 type SearchReturnPage = Exclude<Page, 'search'>;
 
 interface RealtimeNotification {
@@ -64,11 +63,9 @@ const NotificationsPage = lazy(() => import('@/components/pages/notifications-pa
 const PointsPage = lazy(() => import('@/components/pages/points-page'));
 const ProfilePage = lazy(() => import('@/components/pages/profile-page'));
 const LeaderboardPage = lazy(() => import('@/components/pages/leaderboard-page'));
-const LaunchpadPage = lazy(() => import('@/components/pages/launchpad-page'));
-const LauncherPage = lazy(() => import('@/components/pages/launcher-page'));
-const LauncherTradePage = lazy(() => import('@/components/pages/launcher-trade-page'));
+const LaunchpadPage = lazy(() => import('@/components/pages/launcher-page'));
+const LaunchpadTradePage = lazy(() => import('@/components/pages/launcher-trade-page'));
 const WatcherPage = lazy(() => import('@/components/pages/watcher-page'));
-const TwitterTrackPage = lazy(() => import('@/components/pages/twitter-track-page'));
 const SearchPage = lazy(() => import('@/components/pages/search-page'));
 const TokenPage = lazy(() => import('@/components/pages/token-page'));
 const WatchlistPage = lazy(() => import('@/components/pages/watchlist-page'));
@@ -131,8 +128,8 @@ function pageFromLocation(): Exclude<Page, 'token'> | null {
   const pathname = window.location.pathname.replace(/\/+$/, '').toLowerCase();
   if (pathname === '' || pathname === '/') return 'markets';
   if (pathname === '/markets') return 'markets';
-  if (pathname === '/trenches' || pathname === '/launchpad') return 'launchpad';
-  if (pathname === '/launcher' || pathname === '/launch') return 'launcher';
+  if (pathname === '/launchpad') return 'launchpad';
+  if (pathname === '/launchpad-trade') return 'launchpad-trade';
   if (pathname === '/watcher' || pathname === '/wallet-tracker') return 'watcher';
   if (pathname === '/verify') return 'verify';
   if (pathname === '/search') return 'search';
@@ -171,11 +168,9 @@ function writePageLocation(page: Exclude<Page, 'token'>) {
 
   const paths: Record<Exclude<Page, 'token'>, string> = {
     markets: '/',
-    launchpad: '/trenches',
-    launcher: '/launcher',
-    'launcher-trade': '/launcher-trade',
+    launchpad: '/launchpad',
+    'launchpad-trade': '/launchpad-trade',
     watcher: '/watcher',
-    'twitter-track': '/twitter-track',
     verify: '/verify',
     search: '/search',
     watchlist: '/watchlist',
@@ -186,6 +181,7 @@ function writePageLocation(page: Exclude<Page, 'token'>) {
     docs: '/docs',
     notifications: '/notifications',
     profile: '/profile',
+    'twitter-track': '/twitter-track',
   };
 
   url.pathname = paths[page] ?? '/';
@@ -352,19 +348,11 @@ function Terminal() {
       case 'Markets':
         setNonTokenPage('markets');
         break;
-      case 'LaunchPad':
-      case 'Trenches':
+      case 'Launchpad':
         setNonTokenPage('launchpad');
         break;
-      case 'Launcher':
-        setNonTokenPage('launcher');
-        break;
       case 'Watcher':
-      case 'PumpWatch':
         setNonTokenPage('watcher');
-        break;
-      case 'Twitter Track':
-        setNonTokenPage('twitter-track');
         break;
       case 'Verify':
         setNonTokenPage('verify');
@@ -485,11 +473,9 @@ function Terminal() {
       case 'docs':
         return <DocsPage />;
       case 'launchpad':
-        return <LaunchpadPage onSelectToken={handleSelectToken} />;
-      case 'launcher':
-        return <LauncherPage onSelectToken={(id) => { setSelectedLauncherToken(id); setNonTokenPage('launcher-trade'); }} />;
-      case 'launcher-trade':
-        return <LauncherTradePage tokenAddress={selectedLauncherToken} onBack={() => setNonTokenPage('launcher')} />;
+        return <LaunchpadPage onSelectToken={(id) => { setSelectedLauncherToken(id); setNonTokenPage('launchpad-trade'); }} />;
+      case 'launchpad-trade':
+        return <LaunchpadTradePage tokenAddress={selectedLauncherToken} onBack={() => setNonTokenPage('launchpad')} />;
       case 'watcher':
         return <WatcherPage />;
       case 'twitter-track':
@@ -538,7 +524,7 @@ function Terminal() {
             onOpenSearch={openSearch}
             onSelectToken={handleSelectToken}
             searchActive={desktopSearchOpen || (isMobile && page === 'search')}
-            showTicker={page !== 'launchpad' && page !== 'docs' && page !== 'verify' && page !== 'points' && page !== 'leaderboard' && page !== 'twitter-track' && page !== 'launcher' && page !== 'launcher-trade' && page !== 'token'}
+            showTicker={page !== 'launchpad' && page !== 'docs' && page !== 'verify' && page !== 'points' && page !== 'leaderboard' && page !== 'launchpad-trade' && page !== 'token'}
             unreadCount={unreadCount}
           />
           ) : null}
@@ -581,8 +567,7 @@ function Terminal() {
             if (
               tab === 'markets' ||
               tab === 'launchpad' ||
-              tab === 'launcher' ||
-              tab === 'watcher' ||
+              tab === 'verify' ||
               tab === 'twitter-track' ||
               tab === 'watchlist' ||
               tab === 'points' ||

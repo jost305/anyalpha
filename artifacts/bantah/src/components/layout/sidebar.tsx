@@ -2,15 +2,13 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const menuItems = [
-  { emoji: '\u{1F4CA}', label: 'Markets' },
-  { emoji: '\u{1F573}\uFE0F', label: 'Trenches' },
-  { emoji: '\u{1F680}', label: 'Launcher' },
-  { emoji: '\u2B50', label: 'Watchlist' },
-  { emoji: '\u{1F52D}', label: 'Watcher' },
-  { emoji: '\u{1F426}', label: 'Twitter Track' },
-  { emoji: '\u{1F3C6}', label: 'Rewards', pulse: true },
-  { emoji: '\u{1F947}', label: 'Leaderboard' },
-  { emoji: '\u{1F4BC}', label: 'Portfolio' },
+  { emoji: '📊', label: 'Markets' },
+  { emoji: '🚀', label: 'Launchpad' },
+  { emoji: '⭐', label: 'Watchlist' },
+  { emoji: '🔭', label: 'Watcher' },
+  { emoji: '🏆', label: 'Rewards', pulse: true },
+  { emoji: '🥇', label: 'Leaderboard' },
+  { emoji: '💼', label: 'Portfolio' },
 ];
 
 const toolItems = [
