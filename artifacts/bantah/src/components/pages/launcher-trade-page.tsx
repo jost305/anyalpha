@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { ArrowLeft, Globe, Send, Twitter, Copy, ExternalLink, TrendingUp, TrendingDown } from 'lucide-react';
-import { useWriteContract, useReadContract, useAccount, useBalance } from 'wagmi';
+import { useWriteContract, useReadContract, useAccount, useBalance, useSwitchChain } from 'wagmi';
 import { useQuery } from '@tanstack/react-query';
 import { parseEther, formatEther } from 'viem';
 import { toast } from 'sonner';
@@ -78,7 +78,8 @@ export default function LauncherTradePage({ tokenAddress, onBack }: LauncherTrad
   const chartContainerRef = useRef<HTMLDivElement>(null);
 
   const { writeContractAsync } = useWriteContract();
-  const { address: walletAddress } = useAccount();
+  const { address: walletAddress, chainId } = useAccount();
+  const { switchChainAsync } = useSwitchChain();
   const launchpadAddress = "0x8058A276228f547D8d5e6B1B6A675646d2040555"; // DEPLOYED ADDRESS
   const targetAddress = tokenAddress || "0x0000000000000000000000000000000000000000";
 
@@ -319,6 +320,10 @@ export default function LauncherTradePage({ tokenAddress, onBack }: LauncherTrad
     const loadingToast = toast.loading('Waiting for wallet confirmation...');
     
     try {
+      if (chainId !== robinhoodChainTestnet.id) {
+        await switchChainAsync({ chainId: robinhoodChainTestnet.id });
+      }
+
       if (tradeMode === 'buy') {
         const value = parseEther(amount);
         const valueInWei = parseEther(amount);

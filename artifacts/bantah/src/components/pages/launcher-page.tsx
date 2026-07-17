@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Crown, Rocket, Search, ArrowLeft, ImagePlus, Twitter, Send, Globe, ChevronDown, ChevronUp, Loader2, CheckCircle2, Wallet, ChevronLeft, ChevronRight, Feather, Filter, Star } from 'lucide-react';
 import { toast } from 'sonner';
-import { useWriteContract, useAccount } from 'wagmi';
+import { useWriteContract, useAccount, useSwitchChain } from 'wagmi';
 import { useQuery } from '@tanstack/react-query';
 import { formatEther } from 'viem';
 import { LaunchpadABI } from '@/lib/contracts/LaunchpadABI';
@@ -151,7 +151,9 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const { writeContractAsync } = useWriteContract();
-  const { authenticated } = usePrivy();
+  const { chainId } = useAccount();
+  const { switchChainAsync } = useSwitchChain();
+  const { authenticated, login } = usePrivy();
   const launchpadAddress = "0x8058A276228f547D8d5e6B1B6A675646d2040555"; // DEPLOYED ADDRESS
 
   const handleCreateCoin = async () => {
@@ -185,6 +187,10 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
       const metadataUri = await uploadJSONToIPFS(metadata);
 
       setDeployStatus('confirming');
+
+      if (chainId !== robinhoodChainTestnet.id) {
+        await switchChainAsync({ chainId: robinhoodChainTestnet.id });
+      }
 
       const tx = await writeContractAsync({
         address: launchpadAddress,
