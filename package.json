@@ -10,7 +10,7 @@
     "vercel:build": "corepack pnpm --filter @workspace/api-server run build && corepack pnpm --filter @workspace/bantah run build",
     "start": "node ./scripts/railway-start.mjs",
     "sync:production-integrations": "node ./scripts/sync-production-integrations.mjs",
-    "typecheck:libs": "tsc --build",
+    "typecheck:libs": "tsc --build --force",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
   },
   "private": true,
