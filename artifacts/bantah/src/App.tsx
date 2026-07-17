@@ -54,7 +54,7 @@ interface RealtimeNotification {
   readAt?: string | null;
 }
 
-const privyAppId = import.meta.env.VITE_PRIVY_APP_ID?.trim();
+const privyAppId = import.meta.env.VITE_PRIVY_APP_ID?.trim() || "cm8ki21cg00q7tcgdnn0emd1t";
 const REFERRAL_CODE_STORAGE_KEY = 'anyalpha.referralCode';
 const REFERRAL_SOURCE_STORAGE_KEY = 'anyalpha.referralSource';
 
