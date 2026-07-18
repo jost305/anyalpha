@@ -259,7 +259,9 @@ export default function LauncherTradePage({ tokenAddress, onBack }: LauncherTrad
   
   // Cap at 100%
   const rawProgress = (realEthReserveNum / 24) * 100;
-  const progressPercent = Math.min(rawProgress, 100).toFixed(2);
+  const progressPercent = rawProgress > 0 && rawProgress < 0.01 
+    ? rawProgress.toFixed(4) 
+    : Math.min(rawProgress, 100).toFixed(2);
   
   // Actual computed MC from reserve
   const marketCapValue = 5000 + realEthReserveNum * 1000;
@@ -282,12 +284,17 @@ export default function LauncherTradePage({ tokenAddress, onBack }: LauncherTrad
     return (net / Math.max(totalBuyEth, totalSellEth, 0.001)) * 100;
   }, [realTrades]);
 
+  const formatUsd = (val: number) => {
+    if (val >= 1000) return (val / 1000).toFixed(1) + 'K';
+    if (val > 0 && val < 1) return val.toFixed(4);
+    if (val > 0 && val < 10) return val.toFixed(2);
+    return val.toFixed(0);
+  };
+
   // Liquidity: ETH reserve value * 2 (AMM convention)
   const ethReserveNum = Number(formatEther(realEthReserve));
   const liquidityUsd = ethReserveNum * 2 * 1000; // ETH ~$1000 estimate for display
-  const liquidityValue = liquidityUsd >= 1000 
-    ? (liquidityUsd / 1000).toFixed(1) + 'K' 
-    : liquidityUsd.toFixed(0);
+  const liquidityValue = formatUsd(liquidityUsd);
 
   // Volume: sum of all trade ETH amounts
   const volumeUsd = useMemo(() => {
@@ -295,9 +302,7 @@ export default function LauncherTradePage({ tokenAddress, onBack }: LauncherTrad
       sum + Number(formatEther(BigInt(t.ethAmountRaw))), 0);
     return totalEth * 1000; // ETH ~$1000 estimate
   }, [realTrades]);
-  const volumeValue = volumeUsd >= 1000 
-    ? (volumeUsd / 1000).toFixed(1) + 'K' 
-    : volumeUsd.toFixed(0);
+  const volumeValue = formatUsd(volumeUsd);
 
   // Creation time
   const creationTime = tokenData?.createdAt 
