@@ -226,9 +226,9 @@ export default function TopBar({
             >
               <Bell size={18} className={unreadCount > 0 ? 'text-foreground' : 'text-muted-foreground'} />
               {authenticated && unreadCount > 0 ? (
-                <span className="absolute right-0.5 top-0.5 flex">
-                  <span className="absolute inline-flex h-2.5 w-2.5 animate-ping rounded-full bg-destructive opacity-60" />
-                  <span className="relative inline-flex h-2.5 w-2.5 items-center justify-center rounded-full bg-destructive text-[7px] font-bold text-white">
+                <span className="absolute -right-1 -top-1 flex">
+                  <span className="absolute inline-flex h-4 w-4 animate-ping rounded-full bg-destructive opacity-60" />
+                  <span className="relative inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 </span>
