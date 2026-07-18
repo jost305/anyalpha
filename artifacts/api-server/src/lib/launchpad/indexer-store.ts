@@ -177,3 +177,91 @@ export async function getLaunchpadTrades(tokenAddress: string, limit = 50) {
     .orderBy(desc(launchpadTradesTable.createdAt))
     .limit(limit);
 }
+
+export async function getLaunchpadReplies(tokenAddress: string, limit = 50) {
+  const { db, launchpadRepliesTable } = await getDb();
+  return db.select()
+    .from(launchpadRepliesTable)
+    .where(eq(launchpadRepliesTable.tokenAddress, tokenAddress.toLowerCase()))
+    .orderBy(desc(launchpadRepliesTable.createdAt))
+    .limit(limit);
+}
+
+export async function insertLaunchpadReply(tokenAddress: string, userAddress: string, text: string) {
+  try {
+    const { db, launchpadRepliesTable, launchpadTokensTable } = await getDb();
+    
+    await db.transaction(async (tx) => {
+      await tx.insert(launchpadRepliesTable).values({
+        tokenAddress: tokenAddress.toLowerCase(),
+        userAddress: userAddress.toLowerCase(),
+        text,
+      });
+
+      await tx.update(launchpadTokensTable)
+        .set({ 
+          replyCount: sql`${launchpadTokensTable.replyCount} + 1`,
+          updatedAt: new Date()
+        })
+        .where(eq(launchpadTokensTable.tokenAddress, tokenAddress.toLowerCase()));
+    });
+
+    logger.info({ tokenAddress, userAddress }, "Inserted Launchpad Reply");
+
+    // Publish Realtime Event
+    publishRealtimeEvent("launchpad-events", "Reply", {
+      tokenAddress: tokenAddress.toLowerCase(),
+      userAddress: userAddress.toLowerCase(),
+      text,
+    }).catch((err) => logger.error({ err }, "Failed to publish reply pusher event"));
+
+    // Award AlphaPoints for reply
+    try {
+      const client = getPrivyClient();
+      if (client) {
+        const user = await client.getUserByWalletAddress(userAddress);
+        if (user && user.id) {
+          await awardPoints(user.id, {
+            action: "launchpad_reply",
+            basePoints: 10,
+            source: "launchpad",
+            relatedEntityId: `${tokenAddress}:${Date.now()}`,
+            idempotencyKey: `launchpad-reply:${tokenAddress}:${user.id}:${Date.now()}`,
+            applyMultiplier: true,
+          });
+          logger.info({ userId: user.id }, "Awarded AlphaPoints for launchpad reply");
+        }
+      }
+    } catch (pointsErr: any) {
+      logger.debug({ err: pointsErr.message, userAddress }, "Could not award points for reply");
+    }
+  } catch (error: any) {
+    logger.error({ error: String(error), details: error?.message }, "Failed to insert Launchpad Reply");
+    throw error;
+  }
+}
+
+export async function getLaunchpadHolders(tokenAddress: string, limit = 10) {
+  const { db, launchpadTradesTable } = await getDb();
+  
+  // Calculate the net balance for each holder
+  const holders = await db.execute(sql`
+    SELECT 
+      user_address as "userAddress",
+      SUM(
+        CASE WHEN is_buy THEN CAST(token_amount_raw AS numeric)
+        ELSE -CAST(token_amount_raw AS numeric) END
+      ) as "balance"
+    FROM ${launchpadTradesTable}
+    WHERE token_address = ${tokenAddress.toLowerCase()}
+    GROUP BY user_address
+    HAVING SUM(
+      CASE WHEN is_buy THEN CAST(token_amount_raw AS numeric)
+      ELSE -CAST(token_amount_raw AS numeric) END
+    ) > 0
+    ORDER BY "balance" DESC
+    LIMIT ${limit};
+  `);
+  
+  return holders.rows;
+}

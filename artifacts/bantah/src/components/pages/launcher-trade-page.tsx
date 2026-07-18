@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { ArrowLeft, Globe, Send, Twitter, Copy, ExternalLink, TrendingUp, TrendingDown } from 'lucide-react';
 import { useWriteContract, useReadContract, useAccount, useBalance, useSwitchChain } from 'wagmi';
 import { useQuery } from '@tanstack/react-query';
-import { parseEther, formatEther } from 'viem';
+import { parseEther, formatEther, erc20Abi } from 'viem';
 import { toast } from 'sonner';
 import { createChart, ColorType, AreaSeries } from 'lightweight-charts';
 import { LaunchpadABI } from '@/lib/contracts/LaunchpadABI';
@@ -10,6 +10,7 @@ import { useLaunchpadPusher } from '@/lib/useLaunchpadPusher';
 import { robinhoodChainTestnet } from '@/lib/wagmi';
 import { usePrivy } from '@privy-io/react-auth';
 import { getIPFSUrl } from '@/lib/ipfs';
+import { executeDopplerBuyIntent, executeDopplerSellIntent } from '@/lib/doppler';
 
 function RobinhoodIcon({ className }: { className?: string }) {
   return (
@@ -75,6 +76,9 @@ export default function LauncherTradePage({ tokenAddress, onBack }: LauncherTrad
   const [tradeMode, setTradeMode] = useState<'buy' | 'sell'>('buy');
   const [feedTab, setFeedTab] = useState<'thread' | 'trades'>('thread');
   const [amount, setAmount] = useState('');
+  const [replyText, setReplyText] = useState('');
+  const [isPosting, setIsPosting] = useState(false);
+  const [timeframe, setTimeframe] = useState('1h');
   const chartContainerRef = useRef<HTMLDivElement>(null);
 
   const { writeContractAsync } = useWriteContract();
@@ -86,6 +90,17 @@ export default function LauncherTradePage({ tokenAddress, onBack }: LauncherTrad
   // Real wallet balance
   const { data: walletBalance } = useBalance({
     address: walletAddress,
+  });
+
+  const { data: tokenBalanceData } = useReadContract({
+    address: targetAddress as `0x${string}`,
+    abi: erc20Abi,
+    functionName: 'balanceOf',
+    args: [walletAddress as `0x${string}`],
+    query: {
+      enabled: !!walletAddress && targetAddress !== "0x0000000000000000000000000000000000000000",
+      refetchInterval: 3000,
+    }
   });
 
   const { data: tokenStatesData, refetch: refetchState } = useReadContract({
@@ -144,6 +159,26 @@ export default function LauncherTradePage({ tokenAddress, onBack }: LauncherTrad
       return res.json();
     },
     refetchInterval: 10000,
+  });
+
+  const { data: realReplies = [], refetch: refetchReplies } = useQuery({
+    queryKey: ['launchpad-replies', targetAddress],
+    queryFn: async () => {
+      const res = await fetch(`/api/launchpad/tokens/${targetAddress}/replies`);
+      if (!res.ok) throw new Error('Failed to fetch replies');
+      return res.json();
+    },
+    refetchInterval: 10000,
+  });
+
+  const { data: realHolders = [] } = useQuery({
+    queryKey: ['launchpad-holders', targetAddress],
+    queryFn: async () => {
+      const res = await fetch(`/api/launchpad/tokens/${targetAddress}/holders`);
+      if (!res.ok) throw new Error('Failed to fetch holders');
+      return res.json();
+    },
+    refetchInterval: 30000,
   });
 
   const chartData = useMemo(() => {
@@ -222,7 +257,24 @@ export default function LauncherTradePage({ tokenAddress, onBack }: LauncherTrad
 
     if (chartData.length > 0) {
       areaSeries.setData(chartData as any);
-      chart.timeScale().fitContent();
+      
+      const now = Math.floor(Date.now() / 1000);
+      let startTime = chartData[0].time;
+      if (timeframe === '1m') startTime = now - 60;
+      else if (timeframe === '5m') startTime = now - 5 * 60;
+      else if (timeframe === '15m') startTime = now - 15 * 60;
+      else if (timeframe === '1h') startTime = now - 60 * 60;
+      else if (timeframe === '4h') startTime = now - 4 * 60 * 60;
+      else if (timeframe === '1D') startTime = now - 24 * 60 * 60;
+      
+      // Ensure we don't start after the last data point
+      const lastPoint = chartData[chartData.length - 1].time;
+      if (startTime > lastPoint) startTime = Math.max(chartData[0].time, lastPoint - 60 * 60);
+
+      chart.timeScale().setVisibleRange({
+        from: startTime as import('lightweight-charts').Time,
+        to: now as import('lightweight-charts').Time,
+      });
     }
 
     const handleResize = () => {
@@ -234,7 +286,7 @@ export default function LauncherTradePage({ tokenAddress, onBack }: LauncherTrad
       window.removeEventListener('resize', handleResize);
       chart.remove();
     };
-  }, [chartData]);
+  }, [chartData, timeframe]);
 
   // Parse tokenStates struct
   let tokenStateObj = {
@@ -367,28 +419,42 @@ export default function LauncherTradePage({ tokenAddress, onBack }: LauncherTrad
         await switchChainAsync({ chainId: robinhoodChainTestnet.id });
       }
 
-      if (tradeMode === 'buy') {
-        const value = parseEther(amount);
-        const valueInWei = parseEther(amount);
-        const tx = await writeContractAsync({
-          address: launchpadAddress,
-          abi: LaunchpadABI,
-          functionName: 'buy',
-          args: [targetAddress as `0x${string}`, 0n],
-          value: valueInWei,
-          chainId: robinhoodChainTestnet.id,
-        });
-        toast.success(`Buy successful! Tx: ${tx}`, { id: loadingToast });
+      if (tokenStateObj.graduated) {
+        // Token has graduated; route the trade through Doppler SDK (intents)
+        if (tradeMode === 'buy') {
+          const valueInWei = parseEther(amount);
+          const intentHash = await executeDopplerBuyIntent(targetAddress, valueInWei);
+          toast.success(`Doppler Intent submitted! Hash: ${intentHash}`, { id: loadingToast });
+        } else {
+          const tokenAmountBigInt = parseEther(amount);
+          const intentHash = await executeDopplerSellIntent(targetAddress, tokenAmountBigInt);
+          toast.success(`Doppler Intent submitted! Hash: ${intentHash}`, { id: loadingToast });
+        }
       } else {
-        const tokenAmountBigInt = parseEther(amount);
-        const tx = await writeContractAsync({
-          address: launchpadAddress,
-          abi: LaunchpadABI,
-          functionName: 'sell',
-          args: [targetAddress as `0x${string}`, tokenAmountBigInt, 0n],
-          chainId: robinhoodChainTestnet.id,
-        });
-        toast.success(`Sell successful! Tx: ${tx}`, { id: loadingToast });
+        // Token is still on the bonding curve; route through Launchpad contract
+        if (tradeMode === 'buy') {
+          const value = parseEther(amount);
+          const valueInWei = parseEther(amount);
+          const tx = await writeContractAsync({
+            address: launchpadAddress,
+            abi: LaunchpadABI,
+            functionName: 'buy',
+            args: [targetAddress as `0x${string}`, 0n],
+            value: valueInWei,
+            chainId: robinhoodChainTestnet.id,
+          });
+          toast.success(`Buy successful! Tx: ${tx}`, { id: loadingToast });
+        } else {
+          const tokenAmountBigInt = parseEther(amount);
+          const tx = await writeContractAsync({
+            address: launchpadAddress,
+            abi: LaunchpadABI,
+            functionName: 'sell',
+            args: [targetAddress as `0x${string}`, tokenAmountBigInt, 0n],
+            chainId: robinhoodChainTestnet.id,
+          });
+          toast.success(`Sell successful! Tx: ${tx}`, { id: loadingToast });
+        }
       }
       refetchState();
     } catch (err: any) {
@@ -396,8 +462,38 @@ export default function LauncherTradePage({ tokenAddress, onBack }: LauncherTrad
     }
   };
 
+  const handlePostReply = async () => {
+    if (!authenticated) {
+      toast.error('Please connect your wallet first.');
+      login();
+      return;
+    }
+    if (!replyText.trim()) return;
+
+    setIsPosting(true);
+    try {
+      const res = await fetch(`/api/launchpad/tokens/${targetAddress}/replies`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userAddress: walletAddress, text: replyText.trim() }),
+      });
+      if (!res.ok) throw new Error('Failed to post reply');
+      setReplyText('');
+      refetchReplies();
+      toast.success('Reply posted!');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to post reply');
+    } finally {
+      setIsPosting(false);
+    }
+  };
+
   const formattedBalance = walletBalance 
     ? parseFloat(formatEther(walletBalance.value)).toFixed(4) 
+    : '0.0000';
+
+  const formattedTokenBalance = tokenBalanceData
+    ? parseFloat(formatEther(tokenBalanceData as bigint)).toLocaleString(undefined, { maximumFractionDigits: 4 })
     : '0.0000';
 
   return (
@@ -494,7 +590,11 @@ export default function LauncherTradePage({ tokenAddress, onBack }: LauncherTrad
                 </div>
                 <div className="flex items-center gap-1">
                   {['1m', '5m', '15m', '1h', '4h', '1D'].map(tf => (
-                    <button key={tf} className="px-2 py-0.5 text-[10px] font-bold rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+                    <button 
+                      key={tf} 
+                      onClick={() => setTimeframe(tf)}
+                      className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${timeframe === tf ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`}
+                    >
                       {tf}
                     </button>
                   ))}
@@ -529,18 +629,58 @@ export default function LauncherTradePage({ tokenAddress, onBack }: LauncherTrad
                         <RobinhoodIcon className="w-4 h-4 text-[#ccff00]" />
                       </div>
                       <div className="space-y-2 flex-1">
-                        <textarea placeholder="post a reply..." className="w-full bg-muted/30 rounded-lg p-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#ccff00]/30 resize-none placeholder:text-muted-foreground" rows={2}></textarea>
-                        <button className="bg-[#ccff00] px-4 py-1.5 rounded-md text-xs font-black text-primary-foreground dark:text-black hover:bg-[#bbee00] transition-colors shadow-[0_0_10px_rgba(204,255,0,0.2)]">post</button>
+                        <textarea 
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          placeholder="post a reply..." 
+                          className="w-full bg-muted/30 rounded-lg p-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#ccff00]/30 resize-none placeholder:text-muted-foreground" 
+                          rows={2}
+                        ></textarea>
+                        <button 
+                          onClick={handlePostReply}
+                          disabled={isPosting || !replyText.trim()}
+                          className="bg-[#ccff00] px-4 py-1.5 rounded-md text-xs font-black text-primary-foreground dark:text-black hover:bg-[#bbee00] transition-colors shadow-[0_0_10px_rgba(204,255,0,0.2)] disabled:opacity-50"
+                        >
+                          {isPosting ? 'posting...' : 'post'}
+                        </button>
                       </div>
                     </div>
-                    {/* Empty state */}
-                    <div className="flex flex-col items-center justify-center py-10 text-center">
-                      <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mb-3">
-                        <Send className="h-5 w-5 text-muted-foreground" />
+                    {/* Feed */}
+                    {realReplies.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-10 text-center">
+                        <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mb-3">
+                          <Send className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                        <p className="text-sm font-bold text-muted-foreground">No comments yet.</p>
+                        <p className="text-xs text-muted-foreground mt-1">Be the first to start the conversation!</p>
                       </div>
-                      <p className="text-sm font-bold text-muted-foreground">No comments yet.</p>
-                      <p className="text-xs text-muted-foreground mt-1">Be the first to start the conversation!</p>
-                    </div>
+                    ) : (
+                      <div className="space-y-3 mt-4">
+                        {realReplies.map((reply: any) => (
+                          <div key={reply.id} className="flex gap-3 text-sm border-b border-border/30 pb-3">
+                            <div className="h-8 w-8 shrink-0 bg-muted/50 rounded-md flex items-center justify-center">
+                              <span className="text-xs font-bold text-muted-foreground">{reply.userAddress.slice(2, 4)}</span>
+                            </div>
+                            <div className="flex-1 space-y-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                  <span className="bg-muted/50 px-1.5 py-0.5 rounded text-[10px] font-mono truncate max-w-[100px]" title={reply.userAddress}>
+                                    {reply.userAddress.slice(0, 6)}...{reply.userAddress.slice(-4)}
+                                  </span>
+                                  {tokenData?.devAddress?.toLowerCase() === reply.userAddress.toLowerCase() && (
+                                    <span className="bg-[#ccff00]/20 text-[#ccff00] px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase">dev</span>
+                                  )}
+                                </div>
+                                <span className="text-[10px] text-muted-foreground shrink-0">
+                                  {new Date(reply.createdAt).toLocaleDateString()} {new Date(reply.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                </span>
+                              </div>
+                              <p className="text-xs text-foreground/90 break-words whitespace-pre-wrap">{reply.text}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
                 
@@ -614,11 +754,19 @@ export default function LauncherTradePage({ tokenAddress, onBack }: LauncherTrad
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span className="font-bold uppercase">Amount</span>
                   <button 
-                    onClick={() => tradeMode === 'buy' && walletBalance && setAmount(formatEther(walletBalance.value))}
+                    onClick={() => {
+                      if (tradeMode === 'buy' && walletBalance) {
+                        setAmount(formatEther(walletBalance.value));
+                      } else if (tradeMode === 'sell' && tokenBalanceData) {
+                        setAmount(formatEther(tokenBalanceData as bigint));
+                      }
+                    }}
                     className="hover:text-foreground transition-colors flex items-center gap-1"
                   >
                     <span className="text-[10px]">Balance:</span>
-                    <span className="font-bold text-foreground/70">{formattedBalance} ETH</span>
+                    <span className="font-bold text-foreground/70">
+                      {tradeMode === 'buy' ? `${formattedBalance} ETH` : `${formattedTokenBalance} ${tokenData?.symbol || 'TOKENS'}`}
+                    </span>
                   </button>
                 </div>
                 <div className="flex gap-2">
@@ -703,13 +851,47 @@ export default function LauncherTradePage({ tokenAddress, onBack }: LauncherTrad
             {/* Holder Distribution */}
             <div className="border border-border bg-card rounded-xl p-4 space-y-3">
               <h3 className="text-xs font-black uppercase tracking-wider">holder distribution</h3>
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <div className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center mb-3">
-                  <RobinhoodIcon className="w-5 h-5 text-muted-foreground" />
+              {realHolders.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <div className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center mb-3">
+                    <RobinhoodIcon className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                  <p className="text-xs font-bold text-muted-foreground">No holders yet.</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">Be the first to buy this token!</p>
                 </div>
-                <p className="text-xs font-bold text-muted-foreground">Holder data coming soon.</p>
-                <p className="text-[10px] text-muted-foreground mt-1">On-chain holder analytics will appear here.</p>
-              </div>
+              ) : (
+                <div className="space-y-2 mt-2">
+                  <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-muted-foreground pb-1.5 border-b border-border">
+                    <span>Holder</span>
+                    <span>%</span>
+                  </div>
+                  <div className="space-y-1.5 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar">
+                    {realHolders.map((holder: any, idx: number) => {
+                      // Total supply is 1,000,000,000 tokens
+                      const balance = Number(formatEther(BigInt(Math.floor(holder.balance))));
+                      const percent = ((balance / totalSupply) * 100).toFixed(2);
+                      const isDev = holder.userAddress.toLowerCase() === tokenData?.devAddress?.toLowerCase();
+                      
+                      return (
+                        <div key={holder.userAddress} className="flex items-center justify-between text-xs py-1">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-[10px] font-bold text-muted-foreground w-4">{idx + 1}.</span>
+                            <span className="bg-muted/50 px-1.5 py-0.5 rounded text-[11px] font-mono truncate max-w-[100px]" title={holder.userAddress}>
+                              {holder.userAddress.slice(0, 6)}...{holder.userAddress.slice(-4)}
+                            </span>
+                            {isDev && (
+                              <span className="bg-[#ccff00]/20 text-[#ccff00] px-1 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">dev</span>
+                            )}
+                          </div>
+                          <div className="font-bold tabular-nums">
+                            {percent}%
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Contract Info */}

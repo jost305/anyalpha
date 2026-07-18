@@ -822,8 +822,24 @@ export const launchpadTradesTable = pgTable(
   ]
 );
 
+export const launchpadRepliesTable = pgTable(
+  "launchpad_replies",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    tokenAddress: text("token_address").notNull(),
+    userAddress: text("user_address").notNull(),
+    text: text("text").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("launchpad_replies_token_idx").on(table.tokenAddress),
+    index("launchpad_replies_created_idx").on(table.createdAt),
+  ]
+);
+
 export type LaunchpadTokenRow = typeof launchpadTokensTable.$inferSelect;
 export type LaunchpadTradeRow = typeof launchpadTradesTable.$inferSelect;
+export type LaunchpadReplyRow = typeof launchpadRepliesTable.$inferSelect;
 
 export const twitterTrendsTable = pgTable(
   "twitter_trends",
