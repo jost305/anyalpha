@@ -458,8 +458,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
             </div>
 
             <div className="text-sm text-muted-foreground font-bold leading-snug">
-              The First Meme Fair Launch Platform on RobinHood Chain.<br />
-              PUMP TO THE AnyLauncher. <a href="#" className="underline hover:text-yellow-500 ml-1">How it works?</a>
+              The First Meme Fair Launch Platform on RobinHood Chain.
             </div>
 
             <div className="flex w-full max-w-md items-center bg-background border border-border/50 rounded-full p-0.5 pl-3 hover:border-yellow-500/50 transition-colors focus-within:border-yellow-500/50 focus-within:ring-1 focus-within:ring-yellow-500/20">
