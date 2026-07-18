@@ -98,10 +98,13 @@ export async function insertLaunchpadTrade(
         txHash,
       }).onConflictDoNothing();
 
-      // Increment replyCount / trade count
+      // Increment replyCount / trade count and update marketCapRaw
       await tx.update(launchpadTokensTable)
         .set({ 
           replyCount: sql`${launchpadTokensTable.replyCount} + 1`,
+          marketCapRaw: isBuy 
+            ? sql`${launchpadTokensTable.marketCapRaw} + ${ethAmountRaw}::numeric`
+            : sql`${launchpadTokensTable.marketCapRaw} - ${ethAmountRaw}::numeric`,
           updatedAt: new Date()
         })
         .where(eq(launchpadTokensTable.tokenAddress, tokenAddress.toLowerCase()));

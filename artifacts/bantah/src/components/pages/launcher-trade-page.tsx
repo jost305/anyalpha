@@ -93,6 +93,9 @@ export default function LauncherTradePage({ tokenAddress, onBack }: LauncherTrad
     abi: LaunchpadABI,
     functionName: 'tokenStates',
     args: [targetAddress as `0x${string}`],
+    query: {
+      refetchInterval: 3000,
+    }
   });
 
   useLaunchpadPusher();
@@ -252,14 +255,14 @@ export default function LauncherTradePage({ tokenAddress, onBack }: LauncherTrad
   }
 
   const realEthReserve = tokenStateObj.realEthReserve;
-  const graduationThreshold = parseEther('24');
+  const realEthReserveNum = Number(formatEther(realEthReserve));
   
   // Cap at 100%
-  const rawProgress = Number(realEthReserve * 100n / graduationThreshold);
-  const progressPercent = Math.min(rawProgress, 100);
+  const rawProgress = (realEthReserveNum / 24) * 100;
+  const progressPercent = Math.min(rawProgress, 100).toFixed(2);
   
   // Actual computed MC from reserve
-  const marketCapValue = 5000 + Number(realEthReserve * 1000n / 10n ** 18n);
+  const marketCapValue = 5000 + realEthReserveNum * 1000;
 
   // Token price: MC / total supply (1B tokens)
   const totalSupply = 1_000_000_000;

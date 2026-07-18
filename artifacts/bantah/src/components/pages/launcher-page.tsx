@@ -134,7 +134,7 @@ export default function LauncherPage({ onSelectToken }: { onSelectToken?: (id: s
 
   const tokens = realTokens.map((t: any) => {
     // Start at $5K base market cap (virtual reserves)
-    const extraEth = t.marketCapRaw ? Number(formatEther(BigInt(Math.floor(t.marketCapRaw)))) : 0;
+    const extraEth = t.marketCapRaw ? Number(formatEther(BigInt(t.marketCapRaw.toString().split('.')[0]))) : 0;
     const totalMc = 5000 + (extraEth * 1000);
 
     // Generate deterministic dynamic PNL based on address hash (from -50.0% to +149.9%)
