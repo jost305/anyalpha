@@ -306,6 +306,41 @@ export default function LauncherTradePage({ tokenAddress, onBack }: LauncherTrad
     ? '0x13D7...39a7'
     : (tokenData?.devAddress ? tokenData.devAddress.slice(0, 6) + '...' + tokenData.devAddress.slice(-4) : 'Unknown');
 
+  const estimatedReceive = useMemo(() => {
+    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) return null;
+    try {
+      const amountBigInt = parseEther(amount);
+      const feeRate = 100n; // 1%
+      const FEE_DENOMINATOR = 10000n;
+
+      if (tradeMode === 'buy') {
+        const fee = (amountBigInt * feeRate) / FEE_DENOMINATOR;
+        const ethForTokens = amountBigInt - fee;
+        
+        const k = tokenStateObj.virtualEthReserve * tokenStateObj.virtualTokenReserve;
+        const newVirtualEth = tokenStateObj.virtualEthReserve + ethForTokens;
+        if (newVirtualEth === 0n) return "0";
+        const newVirtualToken = k / newVirtualEth;
+        const tokensOut = tokenStateObj.virtualTokenReserve - newVirtualToken;
+        
+        return parseFloat(formatEther(tokensOut)).toLocaleString(undefined, { maximumFractionDigits: 2 });
+      } else {
+        const k = tokenStateObj.virtualEthReserve * tokenStateObj.virtualTokenReserve;
+        const newVirtualToken = tokenStateObj.virtualTokenReserve + amountBigInt;
+        if (newVirtualToken === 0n) return "0";
+        const newVirtualEth = k / newVirtualToken;
+        const ethOut = tokenStateObj.virtualEthReserve - newVirtualEth;
+        
+        const fee = (ethOut * feeRate) / FEE_DENOMINATOR;
+        const ethToUser = ethOut - fee;
+        
+        return parseFloat(formatEther(ethToUser)).toLocaleString(undefined, { maximumFractionDigits: 6 });
+      }
+    } catch {
+      return null;
+    }
+  }, [amount, tradeMode, tokenStateObj.virtualEthReserve, tokenStateObj.virtualTokenReserve]);
+
   const handleTrade = async () => {
     if (!authenticated) {
       toast.error('Please connect your wallet first.');
@@ -604,7 +639,15 @@ export default function LauncherTradePage({ tokenAddress, onBack }: LauncherTrad
                   </div>
                 )}
                 
-                <div className="flex items-center justify-between px-1 pt-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                {estimatedReceive && (
+                  <div className="flex items-center justify-between px-1 pt-2 text-[10px] font-bold uppercase tracking-wider text-[#ccff00]">
+                    <span>you receive (est.)</span>
+                    <span className="text-right">
+                      {estimatedReceive} {tradeMode === 'buy' ? (tokenData?.symbol || 'TOKENS') : 'ETH'}
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between px-1 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   <span>platform fee</span>
                   <span className="text-foreground/50">1%</span>
                 </div>
